@@ -5,22 +5,25 @@ import rego.v1
 # AWS-wide rules. Every provider's rules share the `main` package so a single
 # `conftest test --policy policy/` run covers the whole set; rules are keyed on
 # provider-specific resource types, so a GCP plan simply never matches these.
-
-# Fails the build if any S3 bucket in the plan does not have a matching
-# aws_s3_bucket_public_access_block resource blocking all four public-access
-# settings. This checks the plan itself, not just the s3-bucket module's
-# defaults, so it also catches a bucket someone writes by hand instead of
-# through the module.
+#
+# Organized by security baseline intent (see project-overview.md's "Security
+# baseline intents" table), not by module — an intent that spans multiple
+# resource types (e.g. encryption at rest on both S3 and DynamoDB) gets one
+# section here rather than being re-implemented per module. These rules check
+# the plan itself, not just a module's defaults, so they also catch a
+# resource someone writes by hand instead of through a module.
 
 # Returns the module/resource path an address belongs to, with the
 # resource type and name stripped off. Two resources in the same module
-# instance (e.g. the bucket and its public access block) share this path.
+# instance (e.g. a bucket and its public access block) share this path.
 module_path(addr) := path if {
   parts := split(addr, ".")
   n := count(parts)
   n >= 2
   path := concat(".", array.slice(parts, 0, n - 2))
 }
+
+# ---- Intent: object storage must not be publicly readable/writable ----
 
 fully_blocked(block) if {
   block.change.after.block_public_acls == true
@@ -48,6 +51,8 @@ deny contains msg if {
   )
 }
 
+# ---- Intent: encryption at rest on stored data ----
+
 deny contains msg if {
   bucket := input.resource_changes[_]
   bucket.type == "aws_s3_bucket"
@@ -63,5 +68,37 @@ deny contains msg if {
   msg := sprintf(
     "S3 bucket '%s' has no server-side encryption configuration. Encryption at rest is required.",
     [bucket.address],
+  )
+}
+
+dynamodb_sse_enabled(table) if {
+  some s in table.change.after.server_side_encryption
+  s.enabled == true
+}
+
+deny contains msg if {
+  table := input.resource_changes[_]
+  table.type == "aws_dynamodb_table"
+  not dynamodb_sse_enabled(table)
+  msg := sprintf(
+    "DynamoDB table '%s' does not have server-side encryption enabled. Encryption at rest is required.",
+    [table.address],
+  )
+}
+
+# ---- Intent: point-in-time recovery on databases ----
+
+dynamodb_pitr_enabled(table) if {
+  some p in table.change.after.point_in_time_recovery
+  p.enabled == true
+}
+
+deny contains msg if {
+  table := input.resource_changes[_]
+  table.type == "aws_dynamodb_table"
+  not dynamodb_pitr_enabled(table)
+  msg := sprintf(
+    "DynamoDB table '%s' does not have point-in-time recovery enabled.",
+    [table.address],
   )
 }

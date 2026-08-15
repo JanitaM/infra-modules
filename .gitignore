@@ -1,6 +1,9 @@
 # Local .terraform directories
 .terraform/
 
+# Generated Lambda deployment packages (built by archive_file data sources)
+examples/**/build/
+
 # .tfstate files
 *.tfstate
 *.tfstate.*

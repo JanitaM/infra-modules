@@ -229,3 +229,23 @@ output "api_key_secret_arn" {
 output "api_key_read_policy_arn" {
   value = module.api_key.read_policy_arn
 }
+
+module "feature_flags" {
+  source = "../../../modules/aws/ssm"
+
+  parameter_name = "/example-basic-site/feature-flags"
+  description    = "Feature flag config consumed by the basic-site Lambda handler."
+  value          = "{}"
+
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "feature_flags_parameter_arn" {
+  value = module.feature_flags.parameter_arn
+}
+
+output "feature_flags_read_policy_arn" {
+  value = module.feature_flags.read_policy_arn
+}

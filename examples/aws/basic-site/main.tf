@@ -249,3 +249,33 @@ output "feature_flags_parameter_arn" {
 output "feature_flags_read_policy_arn" {
   value = module.feature_flags.read_policy_arn
 }
+
+module "api_errors_alarm" {
+  source = "../../../modules/aws/cloudwatch"
+
+  alarm_name          = "example-basic-site-api-errors"
+  alarm_description   = "Alerts when the basic-site API handler Lambda errors."
+  namespace           = "AWS/Lambda"
+  metric_name         = "Errors"
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+
+  dimensions = {
+    FunctionName = module.api_handler.function_name
+  }
+
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "api_errors_alarm_arn" {
+  value = module.api_errors_alarm.alarm_arn
+}
+
+output "api_errors_alert_topic_arn" {
+  value = module.api_errors_alarm.topic_arn
+}

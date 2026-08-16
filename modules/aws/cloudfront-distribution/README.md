@@ -1,0 +1,66 @@
+# cloudfront-distribution
+
+A CloudFront distribution fronting one or more origins from other modules in this repo — an `s3-bucket` (static content) and/or a `lambda-function-url` (API) — with Origin Access Control so those origins never need to be public themselves.
+
+This module has no input for skipping the WAF web ACL or allowing plaintext HTTP to the viewer. It takes a bucket from the `s3-bucket` module and attaches the OAC bucket policy for you, and/or a function from the `lambda-function-url` module and grants CloudFront permission to invoke its `AWS_IAM`-only Function URL.
+
+## Usage
+
+```hcl
+module "site" {
+  source = "github.com/JanitaM/infra-modules//modules/aws/cloudfront-distribution?ref=v1.0.0"
+
+  default_origin_id = "static-site"
+  web_acl_arn        = aws_wafv2_web_acl.edge.arn
+
+  origins = [
+    {
+      origin_id   = "static-site"
+      origin_type = "s3"
+      domain_name = module.site_bucket.bucket_regional_domain_name
+      bucket_id   = module.site_bucket.bucket_id
+      bucket_arn  = module.site_bucket.bucket_arn
+    },
+    {
+      origin_id     = "api"
+      origin_type   = "lambda"
+      domain_name   = replace(replace(module.webhook_handler.function_url, "https://", ""), "/", "")
+      function_name = module.webhook_handler.function_name
+      path_pattern  = "/api/*"
+    },
+  ]
+
+  tags = {
+    project = "example"
+  }
+}
+```
+
+## Inputs
+
+| Name | Description | Type | Default |
+|---|---|---|---|
+| `origins` | Origins to attach. Exactly one must have `origin_id == default_origin_id`; every other origin needs `path_pattern` to be routable. Each entry: `origin_id`, `origin_type` (`s3` or `lambda`), `domain_name`, plus `bucket_id`/`bucket_arn` (s3) or `function_name` (lambda) | `list(object(...))` | — (required) |
+| `default_origin_id` | `origin_id` used by the default cache behavior | `string` | — (required) |
+| `web_acl_arn` | ARN of the WAFv2 web ACL (scope `CLOUDFRONT`) to attach | `string` | — (required) |
+| `default_root_object` | Object returned for requests to the root URL | `string` | `"index.html"` |
+| `price_class` | `PriceClass_100`, `PriceClass_200`, or `PriceClass_All` | `string` | `"PriceClass_100"` |
+| `aliases` | Alternate domain names (CNAMEs) | `list(string)` | `[]` |
+| `acm_certificate_arn` | ACM cert ARN (us-east-1), required when `aliases` is set | `string` | `null` |
+| `tags` | Tags applied to the distribution | `map(string)` | `{}` |
+
+## Outputs
+
+| Name | Description |
+|---|---|
+| `distribution_id` | Distribution ID |
+| `distribution_arn` | Distribution ARN |
+| `domain_name` | `*.cloudfront.net` domain name |
+| `hosted_zone_id` | Fixed CloudFront hosted zone ID, for a Route 53 alias record |
+
+## What this module always does, with no opt-out
+
+- Requires a WAF web ACL (`web_acl_id`) — no default, plan fails without one
+- Forces `redirect-to-https` on every cache behavior — never plaintext HTTP to the viewer
+- Uses Origin Access Control (never a public bucket or public Function URL) for every origin, and provisions the matching bucket policy / Lambda permission itself
+- HTTPS-only, TLS 1.2+ from CloudFront to Lambda origins

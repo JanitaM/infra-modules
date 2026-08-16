@@ -148,3 +148,43 @@ output "ses_domain_identity_arn" {
 output "ses_send_policy_arn" {
   value = module.mail.send_policy_arn
 }
+
+module "dns" {
+  source = "../../../modules/aws/route53"
+
+  domain_name = "example-basic-site.com"
+
+  alias_records = [
+    {
+      name               = ""
+      type               = "A"
+      target_domain_name = module.site.domain_name
+      target_zone_id     = module.site.hosted_zone_id
+    },
+  ]
+
+  records = [
+    {
+      name   = "_amazonses.mail.example-basic-site.com"
+      type   = "TXT"
+      values = [module.mail.verification_token]
+    },
+    {
+      name   = "${module.mail.dkim_tokens[0]}._domainkey.mail.example-basic-site.com"
+      type   = "CNAME"
+      values = ["${module.mail.dkim_tokens[0]}.dkim.amazonses.com"]
+    },
+  ]
+
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "dns_zone_id" {
+  value = module.dns.zone_id
+}
+
+output "dns_name_servers" {
+  value = module.dns.name_servers
+}

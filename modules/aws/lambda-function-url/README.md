@@ -32,6 +32,7 @@ module "webhook_handler" {
 | `memory_size` | Function memory, in MB | `number` | `128` |
 | `environment_variables` | Environment variables passed to the function | `map(string)` | `{}` |
 | `tags` | Tags applied to the function and its execution role | `map(string)` | `{}` |
+| `additional_policy_arns` | ARNs of existing policies to attach to the execution role, beyond the CloudWatch Logs baseline | `list(string)` | `[]` |
 
 ## Outputs
 

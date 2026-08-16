@@ -30,6 +30,16 @@ resource "aws_iam_role_policy_attachment" "logs" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# AC-6: attaches existing, already-scoped policies (e.g. the
+# read_policy_arn/send_policy_arn output of another module in this repo) —
+# this module never authors a policy document itself, so it can't introduce
+# a wildcard action/resource here.
+resource "aws_iam_role_policy_attachment" "additional" {
+  for_each   = toset(var.additional_policy_arns)
+  role       = aws_iam_role.primary.name
+  policy_arn = each.value
+}
+
 resource "aws_lambda_function" "primary" {
   function_name    = var.function_name
   role             = aws_iam_role.primary.arn

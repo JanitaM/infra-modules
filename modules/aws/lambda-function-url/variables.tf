@@ -54,3 +54,9 @@ variable "tags" {
   description = "Tags applied to the function and its execution role."
   default     = {}
 }
+
+variable "additional_policy_arns" {
+  type        = list(string)
+  description = "ARNs of existing policies to attach to this function's execution role, in addition to the CloudWatch Logs baseline — e.g. the read_policy_arn/send_policy_arn output of another module in this repo."
+  default     = []
+}

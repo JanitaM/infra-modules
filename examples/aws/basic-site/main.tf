@@ -34,6 +34,15 @@ module "api_handler" {
   runtime          = "nodejs20.x"
   filename         = data.archive_file.api_handler.output_path
   source_code_hash = data.archive_file.api_handler.output_base64sha256
+
+  # This is the handler that actually reads the API key/feature flags and
+  # sends mail, so it's the real consumer of these modules' scoped policies.
+  additional_policy_arns = [
+    module.api_key.read_policy_arn,
+    module.feature_flags.read_policy_arn,
+    module.mail.send_policy_arn,
+  ]
+
   tags = {
     project = "basic-site"
   }

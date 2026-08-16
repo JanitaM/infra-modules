@@ -209,3 +209,23 @@ output "ci_project_name" {
 output "ci_project_arn" {
   value = module.ci.project_arn
 }
+
+module "api_key" {
+  source = "../../../modules/aws/secrets-manager"
+
+  secret_name   = "example-basic-site/api-key"
+  description   = "Third-party API key used by the basic-site Lambda handler."
+  secret_string = "placeholder-rotate-before-use"
+
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "api_key_secret_arn" {
+  value = module.api_key.secret_arn
+}
+
+output "api_key_read_policy_arn" {
+  value = module.api_key.read_policy_arn
+}

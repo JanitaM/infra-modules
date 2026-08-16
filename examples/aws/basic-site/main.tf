@@ -279,3 +279,21 @@ output "api_errors_alarm_arn" {
 output "api_errors_alert_topic_arn" {
   value = module.api_errors_alarm.topic_arn
 }
+
+module "monthly_budget" {
+  source = "../../../modules/aws/budget"
+
+  budget_name          = "example-basic-site-monthly"
+  limit_amount         = "200.0"
+  threshold_percentage = 80
+  alert_emails         = ["billing@example-basic-site.com"]
+  sns_topic_arn        = module.api_errors_alarm.topic_arn
+
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "monthly_budget_arn" {
+  value = module.monthly_budget.budget_arn
+}

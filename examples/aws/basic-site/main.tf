@@ -188,3 +188,24 @@ output "dns_zone_id" {
 output "dns_name_servers" {
   value = module.dns.name_servers
 }
+
+module "ci" {
+  source = "../../../modules/aws/codebuild"
+
+  project_name    = "example-basic-site-ci"
+  description     = "Runs tests on each push to example-basic-site."
+  source_type     = "GITHUB"
+  source_location = "https://github.com/JanitaM/example-basic-site.git"
+
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "ci_project_name" {
+  value = module.ci.project_name
+}
+
+output "ci_project_arn" {
+  value = module.ci.project_arn
+}

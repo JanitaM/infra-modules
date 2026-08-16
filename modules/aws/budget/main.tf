@@ -18,10 +18,10 @@ resource "aws_budgets_budget" "primary" {
   time_unit    = var.time_unit
 
   notification {
-    comparison_operator       = var.comparison_operator
-    threshold                 = var.threshold_percentage
-    threshold_type            = "PERCENTAGE"
-    notification_type         = var.notification_type
+    comparison_operator        = var.comparison_operator
+    threshold                  = var.threshold_percentage
+    threshold_type             = "PERCENTAGE"
+    notification_type          = var.notification_type
     subscriber_email_addresses = var.alert_emails
     subscriber_sns_topic_arns  = var.sns_topic_arn != null ? [var.sns_topic_arn] : null
   }

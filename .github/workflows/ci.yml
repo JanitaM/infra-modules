@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  policy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Installs whatever conftest currently tags "latest", matching this
+      # repo's own decision that policy tooling isn't pinned (see
+      # context/project-overview.md, "Policy versioning").
+      - name: Install conftest
+        run: |
+          url=$(curl -sL https://api.github.com/repos/open-policy-agent/conftest/releases/latest \
+            | grep -o '"browser_download_url": *"[^"]*Linux_x86_64.tar.gz"' \
+            | cut -d '"' -f4)
+          curl -sL "$url" -o conftest.tar.gz
+          tar xzf conftest.tar.gz conftest
+          sudo mv conftest /usr/local/bin/
+
+      - name: Test policy fixtures (aws)
+        run: ./scripts/test-policy-fixtures.sh aws
+
+      - name: Test policy fixtures (gcp)
+        run: ./scripts/test-policy-fixtures.sh gcp
+
+  terraform-validate:
+    runs-on: ubuntu-latest
+    env:
+      TF_PLUGIN_CACHE_DIR: ${{ github.workspace }}/.terraform.d/plugin-cache
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      # 15+ modules each run their own `terraform init`; without a shared
+      # cache every one of them re-downloads the AWS provider from scratch.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.TF_PLUGIN_CACHE_DIR }}
+          key: terraform-providers-${{ runner.os }}
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive
+
+      - name: terraform validate (every module and example)
+        run: |
+          set -euo pipefail
+          mkdir -p "$TF_PLUGIN_CACHE_DIR"
+          for dir in modules/*/*/ examples/*/*/; do
+            if compgen -G "${dir}*.tf" > /dev/null; then
+              echo "== ${dir} =="
+              (cd "$dir" && terraform init -backend=false -input=false >/dev/null && terraform validate)
+            fi
+          done

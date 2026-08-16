@@ -60,11 +60,13 @@ All rules are mandatory. There is no per-project opt-out.
 
 Each rule set has fixture plan JSON under `policy/<provider>/testdata/<module>/` — an `allow.json` that should produce no violations, and one `deny-<reason>.json` per failing case the rule checks. Fixtures are minimal hand-written fragments of `terraform show -json` output, just enough of `resource_changes` to exercise the rule; they are not real `terraform plan` output.
 
-Run a module's fixtures against its rules:
+To spot-check one fixture against its rules:
 
 ```
-conftest test --policy policy/aws policy/aws/testdata/<module>/*.json
+conftest test --policy policy/aws policy/aws/testdata/<module>/allow.json
 ```
+
+Don't run a whole `testdata/<module>/` directory through `conftest test` at once — `deny-*.json` fixtures are *supposed* to produce a violation, so batching them with `allow.json` collapses everything into one aggregate pass/fail and can hide a regression in either direction. `scripts/test-policy-fixtures.sh aws` runs every fixture individually and checks its result against the `allow`/`deny-*` filename convention; this is what CI runs.
 
 When adding a new module's policy, add a matching `testdata/<module>/` directory alongside it, covering every intent the new `.rego` file checks.
 

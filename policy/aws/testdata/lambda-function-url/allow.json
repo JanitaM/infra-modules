@@ -1,0 +1,13 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.fn_url.aws_lambda_function_url.this",
+      "type": "aws_lambda_function_url",
+      "change": {
+        "after": {
+          "authorization_type": "AWS_IAM"
+        }
+      }
+    }
+  ]
+}

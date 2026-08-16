@@ -1,0 +1,18 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.table.aws_dynamodb_table.this",
+      "type": "aws_dynamodb_table",
+      "change": {
+        "after": {
+          "server_side_encryption": [
+            { "enabled": true }
+          ],
+          "point_in_time_recovery": [
+            { "enabled": true }
+          ]
+        }
+      }
+    }
+  ]
+}

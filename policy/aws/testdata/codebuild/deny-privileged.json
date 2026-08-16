@@ -1,0 +1,17 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.codebuild.aws_codebuild_project.this",
+      "type": "aws_codebuild_project",
+      "change": {
+        "after": {
+          "environment": [
+            {
+              "privileged_mode": true
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.budget.aws_budgets_budget.this",
+      "type": "aws_budgets_budget",
+      "change": {
+        "after": {
+          "notification": [
+            {
+              "subscriber_email_addresses": ["alerts@example.com"],
+              "subscriber_sns_topic_arns": []
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

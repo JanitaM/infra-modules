@@ -1,0 +1,13 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.cdn.aws_cloudfront_distribution.this",
+      "type": "aws_cloudfront_distribution",
+      "change": {
+        "after": {
+          "web_acl_id": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/example/abc123"
+        }
+      }
+    }
+  ]
+}

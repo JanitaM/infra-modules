@@ -1,0 +1,13 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.secret.aws_secretsmanager_secret_policy.this",
+      "type": "aws_secretsmanager_secret_policy",
+      "change": {
+        "after": {
+          "policy": "{\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::123456789012:role/app-role\"},\"Action\":\"secretsmanager:GetSecretValue\",\"Resource\":\"*\"}]}"
+        }
+      }
+    }
+  ]
+}

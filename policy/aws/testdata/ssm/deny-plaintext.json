@@ -1,0 +1,13 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.config.aws_ssm_parameter.this",
+      "type": "aws_ssm_parameter",
+      "change": {
+        "after": {
+          "type": "String"
+        }
+      }
+    }
+  ]
+}

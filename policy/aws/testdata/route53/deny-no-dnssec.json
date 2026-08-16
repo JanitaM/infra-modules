@@ -1,0 +1,11 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.dns.aws_route53_zone.this",
+      "type": "aws_route53_zone",
+      "change": {
+        "after": {}
+      }
+    }
+  ]
+}

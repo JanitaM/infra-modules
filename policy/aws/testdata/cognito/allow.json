@@ -1,0 +1,13 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.cognito.aws_cognito_user_pool.this",
+      "type": "aws_cognito_user_pool",
+      "change": {
+        "after": {
+          "mfa_configuration": "ON"
+        }
+      }
+    }
+  ]
+}

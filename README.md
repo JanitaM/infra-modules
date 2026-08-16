@@ -56,6 +56,18 @@ The clone is unpinned on purpose: every project enforces current rules with no d
 
 All rules are mandatory. There is no per-project opt-out.
 
+## Testing policy rules
+
+Each rule set has fixture plan JSON under `policy/<provider>/testdata/<module>/` — an `allow.json` that should produce no violations, and one `deny-<reason>.json` per failing case the rule checks. Fixtures are minimal hand-written fragments of `terraform show -json` output, just enough of `resource_changes` to exercise the rule; they are not real `terraform plan` output.
+
+Run a module's fixtures against its rules:
+
+```
+conftest test --policy policy/aws policy/aws/testdata/<module>/*.json
+```
+
+When adding a new module's policy, add a matching `testdata/<module>/` directory alongside it, covering every intent the new `.rego` file checks.
+
 ## Status
 
 Early. See [context/project-overview.md](context/project-overview.md) for decisions, roadmap, and the security baseline intents that policy rules derive from.

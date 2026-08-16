@@ -1,0 +1,23 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.bucket.aws_s3_bucket.this",
+      "type": "aws_s3_bucket",
+      "change": {
+        "after": {}
+      }
+    },
+    {
+      "address": "module.bucket.aws_s3_bucket_public_access_block.this",
+      "type": "aws_s3_bucket_public_access_block",
+      "change": {
+        "after": {
+          "block_public_acls": true,
+          "block_public_policy": true,
+          "ignore_public_acls": true,
+          "restrict_public_buckets": true
+        }
+      }
+    }
+  ]
+}

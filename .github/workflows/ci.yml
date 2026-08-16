@@ -61,3 +61,21 @@ jobs:
               (cd "$dir" && terraform init -backend=false -input=false >/dev/null && terraform validate)
             fi
           done
+
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install checkov
+        run: pip install checkov
+
+      # Uses .checkov.yaml at the repo root — every skipped check there has
+      # a documented reason. This is a real gate, not report-only: a new
+      # finding either gets fixed or gets a new, justified skip entry.
+      - name: checkov scan
+        run: checkov -d modules/aws --compact --quiet

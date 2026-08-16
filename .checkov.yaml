@@ -1,0 +1,46 @@
+# Checkov config for modules/aws. Every skip below is a deliberate,
+# documented decision, not a blanket suppression — verified against the
+# actual module source, not assumed. See README.md's "Static analysis"
+# section for how this fits alongside policy/aws's curated rego rules.
+# Modeled on the same convention used in JanitaM/aws-connect-demo.
+skip-check:
+  # aws_cloudfront_distribution.primary (modules/aws/cloudfront-distribution)
+  - CKV_AWS_86  # Access logging — accepted gap, disproportionate to a reusable module baseline; a consuming project can add it.
+  - CKV2_AWS_32 # Response headers policy — accepted gap, same reasoning.
+  - CKV_AWS_310 # Origin failover group — accepted gap, adds multi-origin complexity beyond this module's scope.
+  - CKV_AWS_374 # Geo restriction — a business decision per deployment, not a security baseline.
+  - CKV_AWS_174 # Viewer cert TLS 1.2+ — not fixable here: main.tf already sets TLSv1.2_2021 whenever var.aliases is set; this only fires when no alias is given, which forces AWS's own default *.cloudfront.net certificate, and minimum_protocol_version can't be set on that certificate at all.
+  - CKV2_AWS_47 # WAF Log4j AMR — already a documented gap in examples/aws/basic-site's WAF ACL comment ("a real project attaches actual managed rule groups here").
+
+  # aws_s3_bucket.primary (modules/aws/s3-bucket)
+  - CKV_AWS_18   # Access logging — accepted gap, disproportionate to a reusable module baseline.
+  - CKV2_AWS_61  # Lifecycle configuration — accepted gap, same reasoning.
+  - CKV2_AWS_62  # Event notifications — accepted gap, same reasoning.
+  - CKV_AWS_144  # Cross-region replication — accepted gap, same reasoning.
+  - CKV_AWS_145  # SSE-KMS specifically — policy/aws/global.rego only requires *some* SSE config, not a customer-managed key; same reasoning already applied to DynamoDB/SNS in the baseline-intents table.
+
+  # aws_dynamodb_table.primary (modules/aws/dynamodb-table)
+  - CKV_AWS_119 # Customer-managed KMS key — matches this repo's already-made "AWS-managed key satisfies the encryption-at-rest intent" decision (global.rego).
+
+  # aws_cloudwatch_log_group.primary (modules/aws/codebuild)
+  - CKV_AWS_158 # CMK on the log group — accepted gap, same reasoning as CKV_AWS_119.
+  - CKV_AWS_338 # Retention >= 1 year — module defaults log_retention_days to 30; a deliberate default, and the module already exposes the variable for a consumer that needs longer retention.
+
+  # aws_lambda_function.primary (modules/aws/lambda-function-url)
+  - CKV_AWS_50  # X-Ray tracing — accepted gap, disproportionate to a generic reusable module.
+  - CKV_AWS_115 # Reserved concurrency limit — scale-dependent, a consuming project's call to make.
+  - CKV_AWS_116 # Dead Letter Queue — DLQs apply to async invocations; Function URLs invoke synchronously.
+  - CKV_AWS_117 # VPC placement — module is generic with no assumption the function needs private network access.
+  - CKV_AWS_173 # Env var CMK encryption — module has no secrets-shaped environment variables by default.
+  - CKV_AWS_272 # Code signing — an enterprise deployment-pipeline control, disproportionate here.
+
+  # aws_iam_policy_document.dnssec_key (modules/aws/route53)
+  - CKV_AWS_109 # "Resource: *" flagged — false positive: this is a KMS key's own resource policy (main.tf:19-58); AWS's own default key-policy template also uses Resource: "*" since the policy is inherently scoped to the key it's attached to.
+  - CKV_AWS_111 # Same false positive as CKV_AWS_109.
+  - CKV_AWS_356 # Same false positive as CKV_AWS_109.
+
+  # aws_secretsmanager_secret.primary (modules/aws/secrets-manager)
+  - CKV2_AWS_57 # Automatic rotation — accepted gap; module has no rotation Lambda wiring today.
+
+  # aws_route53_zone.primary (modules/aws/route53)
+  - CKV2_AWS_39 # DNS query logging — accepted gap, adds a log-group/resolver-config dependency beyond this module's scope.

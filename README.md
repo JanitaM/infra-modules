@@ -70,6 +70,12 @@ Don't run a whole `testdata/<module>/` directory through `conftest test` at once
 
 When adding a new module's policy, add a matching `testdata/<module>/` directory alongside it, covering every intent the new `.rego` file checks.
 
+## Static analysis
+
+CI also runs [checkov](https://www.checkov.io/) against `modules/aws`, config at `.checkov.yaml`. This is a real blocking gate, not report-only — but checkov is a generic scanner, and this repo's policy is a curated set of rules each tied to a specific documented intent (see "Security baseline intents" in `context/project-overview.md`). Left un-configured, checkov flags plenty of things this repo never claimed to check (access logging, X-Ray tracing, VPC placement, and so on), so every skipped check in `.checkov.yaml` has an inline comment explaining why it's not a gap here — either architecturally not applicable, or an accepted default a consuming project can override.
+
+When adding a module, run `checkov -d modules/aws --compact --quiet` before pushing. A new finding means either fixing it or adding a justified skip to `.checkov.yaml` — never a blanket suppression.
+
 ## Status
 
 Early. See [context/project-overview.md](context/project-overview.md) for decisions, roadmap, and the security baseline intents that policy rules derive from.

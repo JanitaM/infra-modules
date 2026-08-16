@@ -3,16 +3,15 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-No version has been tagged yet, so everything to date is listed under
-`[Unreleased]`.
-
 ## [Unreleased]
+
+## [1.0.0] - 2026-08-16
 
 ### Added
 
 - `modules/aws/s3-bucket` and `policy/aws/global.rego`'s "no public S3" rule — the first module and the first policy, proving the module → plan → policy pipeline end to end.
-- `modules/aws/dynamodb-table`, plus `global.rego` rules requiring encryption at rest and point-in-time recovery.
-- `modules/aws/lambda-function-url`, plus a rule requiring `AWS_IAM` authorization (never a public function URL).
+- `modules/aws/dynamodb-table`, plus `global.rego` rules requiring encryption at rest and point-in-time recovery. `examples/aws/sessions-table` shows it standalone.
+- `modules/aws/lambda-function-url`, plus a rule requiring `AWS_IAM` authorization (never a public function URL). `examples/aws/webhook-handler` shows it standalone.
 - `modules/aws/cloudfront-distribution`, plus a rule requiring a WAF web ACL on the distribution.
 - `modules/aws/cognito`, plus a rule requiring MFA on the user pool.
 - `modules/aws/ses`, plus `global.rego`'s "no wildcard IAM action/resource" rule (shared across every module that authors an IAM policy document).
@@ -22,7 +21,10 @@ No version has been tagged yet, so everything to date is listed under
 - `modules/aws/ssm`, plus a rule requiring parameter type `SecureString`.
 - `modules/aws/cloudwatch` (SNS topic), plus a rule requiring `kms_master_key_id`.
 - `modules/aws/budget`, plus a rule requiring at least one notification subscriber.
-- `examples/aws/basic-site` — a working root config wiring every module above together.
-- `policy/aws/testdata/` — `allow`/`deny-*.json` fixture plan JSON for every module rule and for `global.rego`'s S3/DynamoDB/IAM intents, run via `conftest test`. See `README.md`'s "Testing policy rules" section.
 - `modules/aws/iam-role` — attaches a caller-supplied trust policy plus existing policy ARNs from other modules; authors no policy document itself.
+- `examples/aws/basic-site` — a working root config wiring every AWS module above together.
+- `policy/aws/testdata/` — `allow`/`deny-*.json` fixture plan JSON for every module rule and for `global.rego`'s S3/DynamoDB/IAM intents.
+- `scripts/test-policy-fixtures.sh` — checks each fixture individually against its `allow`/`deny-*` filename convention; `conftest test` on a whole fixture directory at once collapses pass/fail cases into one aggregate result and can hide a regression.
 - `scripts/check-manifest.sh` — validates a consuming project's `infra-modules.yml` and that every module `source` ref's `?ref=` matches the declared `module_version`.
+- `.github/workflows/ci.yml` — runs the policy fixtures and `terraform fmt`/`validate` across every module and example on every push/PR to `main`.
+- `CHANGELOG.md`, this file.

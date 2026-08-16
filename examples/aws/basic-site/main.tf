@@ -113,3 +113,21 @@ output "cloudfront_domain_name" {
 output "api_origin_id" {
   value = "api"
 }
+
+module "users" {
+  source = "../../../modules/aws/cognito"
+
+  user_pool_name = "example-basic-site-users"
+  client_name    = "example-basic-site-web-client"
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "user_pool_id" {
+  value = module.users.user_pool_id
+}
+
+output "user_pool_client_id" {
+  value = module.users.user_pool_client_id
+}

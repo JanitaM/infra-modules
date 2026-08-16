@@ -102,3 +102,42 @@ deny contains msg if {
     [table.address],
   )
 }
+
+# ---- Intent: no wildcard (*) IAM permissions ----
+
+as_array(x) := x if is_array(x)
+
+as_array(x) := [x] if not is_array(x)
+
+has_wildcard(x) if {
+  some v in as_array(x)
+  v == "*"
+}
+
+deny contains msg if {
+  pol := input.resource_changes[_]
+  pol.type in {"aws_iam_policy", "aws_iam_role_policy"}
+  doc := json.unmarshal(pol.change.after.policy)
+  some stmt in as_array(doc.Statement)
+  stmt.Effect == "Allow"
+  has_wildcard(stmt.Action)
+
+  msg := sprintf(
+    "IAM policy '%s' grants a wildcard (*) action. IAM permissions must not use wildcard actions or resources.",
+    [pol.address],
+  )
+}
+
+deny contains msg if {
+  pol := input.resource_changes[_]
+  pol.type in {"aws_iam_policy", "aws_iam_role_policy"}
+  doc := json.unmarshal(pol.change.after.policy)
+  some stmt in as_array(doc.Statement)
+  stmt.Effect == "Allow"
+  has_wildcard(stmt.Resource)
+
+  msg := sprintf(
+    "IAM policy '%s' grants access to a wildcard (*) resource. IAM permissions must not use wildcard actions or resources.",
+    [pol.address],
+  )
+}

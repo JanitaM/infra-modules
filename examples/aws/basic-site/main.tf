@@ -131,3 +131,20 @@ output "user_pool_id" {
 output "user_pool_client_id" {
   value = module.users.user_pool_client_id
 }
+
+module "mail" {
+  source = "../../../modules/aws/ses"
+
+  domain = "mail.example-basic-site.com"
+  tags = {
+    project = "basic-site"
+  }
+}
+
+output "ses_domain_identity_arn" {
+  value = module.mail.domain_identity_arn
+}
+
+output "ses_send_policy_arn" {
+  value = module.mail.send_policy_arn
+}

@@ -35,7 +35,7 @@ run "version_created_when_secret_string_set" {
   command = plan
 
   variables {
-    secret_string = "super-secret-value"
+    secret_string = "REPLACE_ME"
   }
 
   assert {

@@ -80,6 +80,8 @@ Two things worth testing per module:
 - **Conditional resources/attributes**: a `run` block per branch, asserting the resulting plan looks right in each case. Set/list attributes (many AWS resource schemas represent repeated blocks as sets) usually need `tolist(...)` before indexing — Terraform will error with "Cannot index a set value" otherwise.
 - **Variable validation**: a `run` block per `validation` rule, setting an input that should fail it and asserting with `expect_failures = [var.<name>]`.
 
+If a module has a `data "aws_iam_policy_document"` (or any other data source that's normally computed locally, not fetched from a real API), `mock_provider` still mocks it and its output comes back invalid — override it explicitly with an `override_data` block (globally in `mock_provider {}` for one that's always created, or inside a specific `run` block when the data source only exists under `count`/`for_each`, e.g. `data.aws_iam_policy_document.source_s3[0]`). See `modules/aws/codebuild/tests/codebuild.tftest.hcl` for both forms.
+
 `budget` (`modules/aws/budget/tests/budget.tftest.hcl`) is the reference implementation — one module's coverage, proven working in CI, before the rest get backfilled.
 
 To run a module's tests locally:

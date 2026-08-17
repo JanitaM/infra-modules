@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # AC-6: this module never authors a policy document itself, so it cannot
 # introduce a wildcard action/resource of its own — it only attaches
 # already-scoped policies (e.g. the read_policy_arn/send_policy_arn outputs

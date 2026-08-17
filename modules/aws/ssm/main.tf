@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # SC-28: type is hardcoded to SecureString, no opt-out. A plaintext String or
 # StringList value is readable by anyone with ssm:GetParameter alone — no KMS
 # decrypt permission required — unlike SecureString, which needs both. See

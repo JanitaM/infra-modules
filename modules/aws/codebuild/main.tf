@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # AC-3: trust policy scoped to the CodeBuild service only — nothing else can assume this role.
 data "aws_iam_policy_document" "assume_role" {
   statement {

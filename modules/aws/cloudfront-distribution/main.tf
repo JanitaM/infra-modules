@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # default_origin_id must name an entry in var.origins, and every other entry
 # needs a path_pattern to be reachable — otherwise it's defined but unrouted.
 # A plan-time warning, not a hard failure: Terraform 1.6 can't cross-reference

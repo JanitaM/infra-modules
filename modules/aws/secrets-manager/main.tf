@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # SC-28: encrypted at rest by default with the AWS-managed key, or a
 # customer-managed key when var.kms_key_id is set.
 resource "aws_secretsmanager_secret" "primary" {

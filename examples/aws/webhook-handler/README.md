@@ -16,6 +16,10 @@ A single Lambda Function URL, standing alone — no CloudFront, no other modules
 
 Replace `src/index.js` with your handler, and `function_name` with something specific to your project. Everything else (`runtime`, `timeout`, `memory_size`, `environment_variables`) is a module variable — see `modules/aws/lambda-function-url/variables.tf`.
 
+## State management
+
+This example has no backend configured, so `terraform init` defaults to local state. Fine for trying it out; not for real use — see the root [README](../../../README.md#state-management) for the bootstrap steps before using this as a real starting point.
+
 ## Running it
 
 ```

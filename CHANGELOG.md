@@ -8,6 +8,8 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - `README.md` — "Requirements", "Contributing", and "License" sections, closing gaps found in a documentation audit: no prerequisites list, the branch-protection workflow written down nowhere a reader would find it, and no mention of the MIT license.
+- `README.md` — "State management" section: this repo doesn't provision Terraform state storage, so this documents the bootstrap pattern (use `modules/aws/s3-bucket` for the state bucket, native S3 backend locking, `terraform init -migrate-state`) so consumers don't default to unlocked local state in production. Each of the 3 examples now links to it instead of defaulting silently.
+- `SECURITY.md` — private vulnerability reporting via GitHub's Security tab, scope, and response expectations for this solo-maintainer repo.
 
 ### Changed
 

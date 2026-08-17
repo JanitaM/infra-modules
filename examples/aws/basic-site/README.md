@@ -33,6 +33,10 @@ Every domain name, email address, and resource name here (`example-basic-site.co
 
 `module.api_key`'s `secret_string = "placeholder-rotate-before-use"` is exactly that: a placeholder value the module creates so the secret container exists, meant to be rotated to a real value out-of-band (this module deliberately doesn't manage secret *values* long-term, only the container and read policy — see `modules/aws/secrets-manager`).
 
+## State management
+
+This example has no backend configured, so `terraform init` defaults to local state. Fine for trying it out; not for real use — see the root [README](../../../README.md#state-management) for the bootstrap steps before using this as a real starting point.
+
 ## Running it
 
 ```

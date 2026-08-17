@@ -103,8 +103,11 @@ jobs:
         with:
           python-version: "3.12"
 
+      # Pinned via requirements.txt (dependabot's pip ecosystem tracks it —
+      # see .github/dependabot.yml) rather than `pip install checkov`
+      # unpinned, so a checkov release can't silently change what CI enforces.
       - name: Install checkov
-        run: pip install checkov
+        run: pip install -r requirements.txt
 
       # Uses .checkov.yaml at the repo root — every skipped check there has
       # a documented reason. This is a real gate, not report-only: a new

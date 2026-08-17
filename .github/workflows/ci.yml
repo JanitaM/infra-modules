@@ -68,6 +68,32 @@ jobs:
             fi
           done
 
+  terraform-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      # Reference implementation for `terraform test` coverage of module
+      # logic (validation rules, conditional resources) — see
+      # context/project-overview.md, "Module `terraform test` coverage".
+      # `mock_provider` in tests/budget.tftest.hcl means no AWS credentials
+      # are needed here. Only `budget` has tests so far; this loops over
+      # modules/aws/*/tests/ so backfilling the rest just means adding the
+      # directory, no CI change.
+      - name: terraform test (every module with tests/)
+        run: |
+          set -euo pipefail
+          for dir in modules/aws/*/; do
+            if [[ -d "${dir}tests" ]]; then
+              echo "== ${dir} =="
+              (cd "$dir" && terraform init -backend=false -input=false >/dev/null && terraform test)
+            fi
+          done
+
   checkov:
     runs-on: ubuntu-latest
     steps:

@@ -70,6 +70,26 @@ Don't run a whole `testdata/<module>/` directory through `conftest test` at once
 
 When adding a new module's policy, add a matching `testdata/<module>/` directory alongside it, covering every intent the new `.rego` file checks.
 
+## Testing module logic
+
+Policy fixtures check plan output against security rules; they don't exercise a module's own logic — variable `validation` blocks, or resources gated behind `count`/`for_each`/a ternary. That's what `terraform test` (`.tftest.hcl`) covers, one `tests/` directory per module (`modules/aws/<module>/tests/<module>.tftest.hcl`), Terraform's own convention for test file discovery.
+
+CI has no AWS credentials configured anywhere, so every test file must open with `mock_provider "aws" {}` — this mocks the provider entirely, so `command = plan` never makes a real API call. Requires Terraform >= 1.7 (see each module's `versions.tf`).
+
+Two things worth testing per module:
+- **Conditional resources/attributes**: a `run` block per branch, asserting the resulting plan looks right in each case. Set/list attributes (many AWS resource schemas represent repeated blocks as sets) usually need `tolist(...)` before indexing — Terraform will error with "Cannot index a set value" otherwise.
+- **Variable validation**: a `run` block per `validation` rule, setting an input that should fail it and asserting with `expect_failures = [var.<name>]`.
+
+`budget` (`modules/aws/budget/tests/budget.tftest.hcl`) is the reference implementation — one module's coverage, proven working in CI, before the rest get backfilled.
+
+To run a module's tests locally:
+
+```
+cd modules/aws/<module> && terraform init -backend=false && terraform test
+```
+
+CI (`terraform-test` job) loops over every `modules/aws/*/tests/` directory that exists, so adding a new module's test coverage needs no CI change — just the directory.
+
 ## Static analysis
 
 CI also runs [checkov](https://www.checkov.io/) against `modules/aws`, config at `.checkov.yaml`. This is a real blocking gate, not report-only — but checkov is a generic scanner, and this repo's policy is a curated set of rules each tied to a specific documented intent (see "Security baseline intents" in `context/project-overview.md`). Left un-configured, checkov flags plenty of things this repo never claimed to check (access logging, X-Ray tracing, VPC placement, and so on), so every skipped check in `.checkov.yaml` has an inline comment explaining why it's not a gap here — either architecturally not applicable, or an accepted default a consuming project can override.

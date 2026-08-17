@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # AU-6: a budget with no notification silently tracks spend that nobody
 # sees. alert_emails has no default and must be non-empty (see variables.tf),
 # so a notification always exists — hardcoded, no opt-out. See

@@ -35,6 +35,21 @@ module "images_bucket" {
 }
 ```
 
+## State management
+
+This repo doesn't provision or configure Terraform state storage — that's project infrastructure, not something a reusable module or example should assume for you. Nothing here does it automatically; you set this up yourself, once per AWS account.
+
+**How state works, briefly**: every `plan`/`apply` reads the current state file first ("what exists already"), diffs it against your config, applies only the difference, then writes the updated state back. That's why the bucket holding it has to exist *before* anything else you build with these modules — there's nothing to read or write to otherwise.
+
+**Bootstrap, once per account**:
+1. Use `modules/aws/s3-bucket` to create the bucket — it's already encrypted, versioned, and private by default (`modules/aws/s3-bucket/main.tf`), so the bucket holding your state gets the same baseline this repo enforces on everything else. Run this one `apply` with local state; there's nothing to point a backend at yet.
+2. Once the bucket exists, add a `backend "s3" {}` block pointing at it, with `use_lockfile = true` for locking (native to the `s3` backend since Terraform 1.10 — no separate DynamoDB lock table needed).
+3. Run `terraform init -migrate-state` once to move that bootstrap apply's local state into the bucket.
+
+Every apply after that — for the bootstrap bucket itself or any other resource built with modules from this repo — reads and writes that same remote state.
+
+The 3 examples under `examples/aws/` intentionally skip this (see each one's own "State management" note) — they use local state, which is fine for trying them out, not for real use.
+
 ## Declaring what you use
 
 Every consuming project commits an `infra-modules.yml` at its root. Both fields are required:

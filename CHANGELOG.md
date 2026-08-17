@@ -5,11 +5,15 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-17
+
 ### Added
 
 - `additional_policy_arns` on `modules/aws/lambda-function-url` — attaches existing scoped policies to the function's execution role, in addition to the CloudWatch Logs baseline. `examples/aws/basic-site` now wires `api_handler` to the `api_key`/`feature_flags`/`mail` modules' policy ARNs, which previously had no consumer in the example.
 - `.github/dependabot.yml` — weekly checks for GitHub Actions version bumps.
 - `checkov` CI job plus `.checkov.yaml` — a real blocking static-analysis gate against `modules/aws`, alongside the curated `policy/aws` rego rules. Every skipped check is individually justified in `.checkov.yaml`. See `README.md`'s "Static analysis" section.
+- MIT `LICENSE`.
+- READMEs for all 3 examples (`basic-site`, `webhook-handler`, `sessions-table`) — what each builds, prerequisites, placeholder values to replace, and how to run it.
 
 ## [1.0.0] - 2026-08-16
 

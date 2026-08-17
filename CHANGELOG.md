@@ -5,6 +5,14 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `README.md` — "Requirements", "Contributing", and "License" sections, closing gaps found in a documentation audit: no prerequisites list, the branch-protection workflow written down nowhere a reader would find it, and no mention of the MIT license.
+
+### Changed
+
+- CI now installs a pinned `conftest` release instead of always-latest, matching the existing `checkov` pin — same reasoning: an unpinned tool version can't silently change what CI enforces.
+
 ## [1.1.0] - 2026-08-17
 
 ### Added

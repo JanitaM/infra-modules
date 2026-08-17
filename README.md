@@ -9,6 +9,12 @@ Two things live here, with two different versioning rules:
 
 Modules are grouped by provider. There are no cloud-agnostic modules that abstract over, say, S3 and GCS — the abstraction leaks, and the provider-specific settings are exactly what the policies need to inspect. What's shared across clouds is the pattern, not the resource code.
 
+## Requirements
+
+- **Terraform >= 1.7** — required by every module's `versions.tf`; also the floor for running `terraform test` locally (see "Testing module logic" below).
+- **[conftest](https://www.conftest.dev/)** — to run or spot-check policy fixtures (see "Testing policy rules"). CI installs it pinned to a specific release; match that version locally if results need to agree with CI.
+- **[checkov](https://www.checkov.io/)** (`pip install -r requirements.txt`) — to run the static-analysis gate locally before pushing (see "Static analysis").
+
 ## Layout
 
 ```
@@ -97,6 +103,14 @@ CI (`terraform-test` job) loops over every `modules/aws/*/tests/` directory that
 CI also runs [checkov](https://www.checkov.io/) against `modules/aws`, config at `.checkov.yaml`. This is a real blocking gate, not report-only — but checkov is a generic scanner, and this repo's policy is a curated set of rules each tied to a specific documented intent (see "Security baseline intents" in `context/project-overview.md`). Left un-configured, checkov flags plenty of things this repo never claimed to check (access logging, X-Ray tracing, VPC placement, and so on), so every skipped check in `.checkov.yaml` has an inline comment explaining why it's not a gap here — either architecturally not applicable, or an accepted default a consuming project can override.
 
 When adding a module, run `checkov -d modules/aws --compact --quiet` before pushing. A new finding means either fixing it or adding a justified skip to `.checkov.yaml` — never a blanket suppression.
+
+## Contributing
+
+`main` is protected: changes land via PR, `enforce_admins` applies to the repo owner too (verified — a direct push to `main` is rejected the same way it would be for anyone else), and all 3 CI checks (`policy-test`, `terraform-validate`, `checkov`) must be green before merge.
+
+## License
+
+[MIT](LICENSE).
 
 ## Status
 

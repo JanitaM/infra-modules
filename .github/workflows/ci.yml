@@ -51,6 +51,12 @@ jobs:
       - name: terraform fmt -check
         run: terraform fmt -check -recursive
 
+      # Catches drift in the shared required_version/required_providers
+      # block described in context/project-overview.md — see
+      # scripts/check-module-versions.sh.
+      - name: check module versions.tf drift
+        run: ./scripts/check-module-versions.sh
+
       - name: terraform validate (every module and example)
         run: |
           set -euo pipefail

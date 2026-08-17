@@ -1,10 +1,3 @@
-terraform {
-  required_version = ">= 1.6"
-  required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
-  }
-}
-
 # SC-28: kms_master_key_id is always set, no opt-out — defaults to the
 # AWS-managed alias/aws/sns key when var.kms_key_id is null. See
 # policy/aws/modules/cloudwatch.rego for the plan-time check that also

@@ -36,6 +36,30 @@ variable "billing_mode" {
   }
 }
 
+variable "global_secondary_indexes" {
+  type = list(object({
+    name            = string
+    hash_key        = string
+    hash_key_type   = optional(string, "S")
+    range_key       = optional(string)
+    range_key_type  = optional(string, "S")
+    projection_type = optional(string, "ALL")
+  }))
+  description = "Global secondary indexes. Each entry's hash_key/range_key become table attributes automatically — do not redeclare them via hash_key/range_key above unless they're also the table's own key."
+  default     = []
+
+  validation {
+    condition     = alltrue([for g in var.global_secondary_indexes : contains(["ALL", "KEYS_ONLY"], g.projection_type)])
+    error_message = "every global_secondary_indexes entry's projection_type must be ALL or KEYS_ONLY. INCLUDE (with its required non_key_attributes list) is not supported by this module."
+  }
+}
+
+variable "ttl_attribute" {
+  type        = string
+  description = "Attribute name DynamoDB uses for item expiry (TTL). Leave null to disable TTL."
+  default     = null
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags applied to the table."

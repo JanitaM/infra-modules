@@ -42,6 +42,7 @@ resource "aws_lambda_function" "primary" {
   source_code_hash = var.source_code_hash
   timeout          = var.timeout
   memory_size      = var.memory_size
+  layers           = var.layers
   tags             = var.tags
 
   dynamic "environment" {

@@ -33,6 +33,7 @@ module "webhook_handler" {
 | `environment_variables` | Environment variables passed to the function | `map(string)` | `{}` |
 | `tags` | Tags applied to the function and its execution role | `map(string)` | `{}` |
 | `additional_policy_arns` | ARNs of existing policies to attach to the execution role, beyond the CloudWatch Logs baseline | `list(string)` | `[]` |
+| `layers` | ARNs of Lambda layers to attach (e.g. a published extension layer). Max 5, matching Lambda's own limit | `list(string)` | `[]` |
 
 ## Outputs
 

@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `global_secondary_indexes` and `ttl_attribute` on `modules/aws/dynamodb-table` — the module previously supported only a table's own hash/range key, forcing every GSI- or TTL-needing consumer to hand-roll `aws_dynamodb_table` instead. Both are generic DynamoDB capabilities, not project-specific: `global_secondary_indexes` is a `list(object({ name, hash_key, hash_key_type, range_key, range_key_type, projection_type }))` (`INCLUDE` projection is not supported — it needs a `non_key_attributes` list this module doesn't yet expose), and `ttl_attribute` is an optional attribute name. A GSI reusing the table's own hash/range key does not produce a duplicate `attribute` block. Surfaced by a real consumer needing 4 of 7 tables to have a GSI or TTL and hand-rolling all 4 as a stopgap.
+
 ## [1.2.0] - 2026-08-18
 
 ### Added

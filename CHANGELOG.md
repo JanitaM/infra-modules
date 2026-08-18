@@ -8,6 +8,7 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 
 - `global_secondary_indexes` and `ttl_attribute` on `modules/aws/dynamodb-table` — the module previously supported only a table's own hash/range key, forcing every GSI- or TTL-needing consumer to hand-roll `aws_dynamodb_table` instead. Both are generic DynamoDB capabilities, not project-specific: `global_secondary_indexes` is a `list(object({ name, hash_key, hash_key_type, range_key, range_key_type, projection_type }))` (`INCLUDE` projection is not supported — it needs a `non_key_attributes` list this module doesn't yet expose), and `ttl_attribute` is an optional attribute name. A GSI reusing the table's own hash/range key does not produce a duplicate `attribute` block. Surfaced by a real consumer needing 4 of 7 tables to have a GSI or TTL and hand-rolling all 4 as a stopgap.
+- `layers` on `modules/aws/lambda-function-url` — attaches published or custom Lambda layer ARNs (e.g. the AWS Lambda Web Adapter extension layer, an X-Ray or monitoring agent layer). Generic Lambda capability the module previously had no way to express, capped at 5 entries matching AWS's own per-function limit. Surfaced by a real consumer needing the LWA layer for two functions and having to hand-roll `aws_lambda_function`/`aws_iam_role` as a stopgap.
 
 ## [1.2.0] - 2026-08-18
 

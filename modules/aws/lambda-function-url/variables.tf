@@ -60,3 +60,14 @@ variable "additional_policy_arns" {
   description = "ARNs of existing policies to attach to this function's execution role, in addition to the CloudWatch Logs baseline — e.g. the read_policy_arn/send_policy_arn output of another module in this repo."
   default     = []
 }
+
+variable "layers" {
+  type        = list(string)
+  description = "ARNs of Lambda layers to attach, e.g. a published extension layer (X-Ray, a monitoring agent, the AWS Lambda Web Adapter). Up to 5, matching Lambda's own limit."
+  default     = []
+
+  validation {
+    condition     = length(var.layers) <= 5
+    error_message = "layers may contain at most 5 entries — AWS Lambda's own per-function limit."
+  }
+}

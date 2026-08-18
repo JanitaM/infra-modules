@@ -42,21 +42,11 @@ module "api_handler" {
 
 # Empty rule set (default action: allow) — enough to satisfy the "public edge
 # must sit behind a WAF" requirement for this example; a real project attaches
-# actual managed rule groups here.
-resource "aws_wafv2_web_acl" "edge" {
-  name        = "example-basic-site-edge"
-  description = "Edge WAF for the basic-site CloudFront distribution."
-  scope       = "CLOUDFRONT"
+# actual rate_based_rules/ip_allowlist here.
+module "waf" {
+  source = "../../../modules/aws/waf"
 
-  default_action {
-    allow {}
-  }
-
-  visibility_config {
-    cloudwatch_metrics_enabled = true
-    metric_name                = "example-basic-site-edge"
-    sampled_requests_enabled   = true
-  }
+  web_acl_name = "example-basic-site-edge"
 
   tags = {
     project = "basic-site"
@@ -67,7 +57,7 @@ module "site" {
   source = "../../../modules/aws/cloudfront-distribution"
 
   default_origin_id = "static-site"
-  web_acl_arn       = aws_wafv2_web_acl.edge.arn
+  web_acl_arn       = module.waf.web_acl_arn
 
   origins = [
     {

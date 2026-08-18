@@ -1,0 +1,14 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.site_cert.aws_acm_certificate.this",
+      "type": "aws_acm_certificate",
+      "change": {
+        "after": {
+          "domain_name": "example.com",
+          "validation_method": "DNS"
+        }
+      }
+    }
+  ]
+}

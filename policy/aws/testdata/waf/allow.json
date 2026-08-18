@@ -1,0 +1,19 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.waf.aws_wafv2_web_acl.primary",
+      "type": "aws_wafv2_web_acl",
+      "change": {
+        "after": {
+          "visibility_config": [
+            {
+              "cloudwatch_metrics_enabled": true,
+              "sampled_requests_enabled": true,
+              "metric_name": "example-edge"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

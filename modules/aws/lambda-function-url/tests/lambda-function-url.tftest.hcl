@@ -78,3 +78,44 @@ run "rejects_invalid_runtime" {
 
   expect_failures = [var.runtime]
 }
+
+run "no_layers_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(aws_lambda_function.primary.layers) == 0
+    error_message = "no layers should be attached when var.layers is empty"
+  }
+}
+
+run "layers_attached_when_set" {
+  command = plan
+
+  variables {
+    layers = [
+      "arn:aws:lambda:us-east-1:753240598075:layer:LambdaAdapterLayerX86:24",
+    ]
+  }
+
+  assert {
+    condition     = length(aws_lambda_function.primary.layers) == 1
+    error_message = "one layer should be attached per entry in var.layers"
+  }
+}
+
+run "rejects_more_than_five_layers" {
+  command = plan
+
+  variables {
+    layers = [
+      "arn:aws:lambda:us-east-1:111111111111:layer:one:1",
+      "arn:aws:lambda:us-east-1:111111111111:layer:two:1",
+      "arn:aws:lambda:us-east-1:111111111111:layer:three:1",
+      "arn:aws:lambda:us-east-1:111111111111:layer:four:1",
+      "arn:aws:lambda:us-east-1:111111111111:layer:five:1",
+      "arn:aws:lambda:us-east-1:111111111111:layer:six:1",
+    ]
+  }
+
+  expect_failures = [var.layers]
+}

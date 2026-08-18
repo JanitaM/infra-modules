@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `layers` on `modules/aws/lambda-function-url` — attaches published or custom Lambda layer ARNs (e.g. the AWS Lambda Web Adapter extension layer, an X-Ray or monitoring agent layer). Generic Lambda capability the module previously had no way to express, capped at 5 entries matching AWS's own per-function limit. Surfaced by a real consumer needing the LWA layer for two functions and having to hand-roll `aws_lambda_function`/`aws_iam_role` as a stopgap.
+
 ## [1.2.0] - 2026-08-18
 
 ### Added

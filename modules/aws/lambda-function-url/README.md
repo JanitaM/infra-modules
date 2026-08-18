@@ -34,6 +34,7 @@ module "webhook_handler" {
 | `tags` | Tags applied to the function and its execution role | `map(string)` | `{}` |
 | `additional_policy_arns` | ARNs of existing policies to attach to the execution role, beyond the CloudWatch Logs baseline | `list(string)` | `[]` |
 | `layers` | ARNs of Lambda layers to attach (e.g. a published extension layer). Max 5, matching Lambda's own limit | `list(string)` | `[]` |
+| `invoke_mode` | Function URL invoke mode: `BUFFERED` or `RESPONSE_STREAM`. Required alongside a streaming-capable adapter (e.g. the Lambda Web Adapter's own streaming env var) for a proxied app to actually stream its response — the adapter's env var alone does not change this | `string` | `"BUFFERED"` |
 
 ## Outputs
 

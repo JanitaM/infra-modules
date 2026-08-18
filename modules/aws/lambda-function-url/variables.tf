@@ -71,3 +71,14 @@ variable "layers" {
     error_message = "layers may contain at most 5 entries — AWS Lambda's own per-function limit."
   }
 }
+
+variable "invoke_mode" {
+  type        = string
+  description = "Function URL invoke mode. BUFFERED (the default) returns the full response only once the function finishes. RESPONSE_STREAM delivers the response progressively as the function writes it — required for a proxied app (e.g. via the Lambda Web Adapter) that itself streams a response, such as a Next.js app using React Server Components streaming; setting an adapter's own streaming env var alone does not enable this at the Function URL level."
+  default     = "BUFFERED"
+
+  validation {
+    condition     = contains(["BUFFERED", "RESPONSE_STREAM"], var.invoke_mode)
+    error_message = "invoke_mode must be BUFFERED or RESPONSE_STREAM."
+  }
+}

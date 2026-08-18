@@ -119,3 +119,35 @@ run "rejects_more_than_five_layers" {
 
   expect_failures = [var.layers]
 }
+
+run "defaults_to_buffered_invoke_mode" {
+  command = plan
+
+  assert {
+    condition     = aws_lambda_function_url.primary.invoke_mode == "BUFFERED"
+    error_message = "invoke_mode should default to BUFFERED"
+  }
+}
+
+run "sets_response_stream_invoke_mode_when_requested" {
+  command = plan
+
+  variables {
+    invoke_mode = "RESPONSE_STREAM"
+  }
+
+  assert {
+    condition     = aws_lambda_function_url.primary.invoke_mode == "RESPONSE_STREAM"
+    error_message = "invoke_mode should be RESPONSE_STREAM when requested"
+  }
+}
+
+run "rejects_invalid_invoke_mode" {
+  command = plan
+
+  variables {
+    invoke_mode = "STREAMING"
+  }
+
+  expect_failures = [var.invoke_mode]
+}

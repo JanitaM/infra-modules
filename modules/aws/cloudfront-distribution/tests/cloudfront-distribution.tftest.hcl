@@ -146,7 +146,7 @@ run "forwarding_config_reaches_the_default_cache_behavior" {
   command = plan
 
   variables {
-    forwarded_headers          = ["rsc"]
+    forwarded_headers           = ["rsc"]
     forwarded_query_string_keys = ["_rsc"]
     forwarded_cookie_names      = ["__prerender_bypass"]
     response_headers_policy_id  = "abc123"

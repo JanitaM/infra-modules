@@ -5,6 +5,8 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-18
+
 ### Added
 
 - `forwarded_headers`, `forwarded_query_string_keys`, `forwarded_cookie_names`, and `response_headers_policy_id` on `modules/aws/cloudfront-distribution`. The default cache behavior previously hardcoded `forwarded_values { query_string = false, cookies { forward = "none" } }` with no way to forward any header, and had no way to attach a Response Headers Policy at all — both generic CloudFront capabilities any dynamic origin can need (auth cookies, locale headers, A/B-test cookies, CSP/HSTS), not specific to any one consumer's use case. All four default to the module's original hardcoded behavior (forward/attach nothing), so existing consumers are unaffected. `response_headers_policy_id` takes an ID the caller creates elsewhere — this module still authors no header *content*, since CSP directives are inherently project-specific. Surfaced by a real consumer needing to forward a specific header/query-key/cookie for Next.js RSC caching and hand-rolling the whole distribution as a stopgap, only to still be blocked on Response Headers Policy separately.

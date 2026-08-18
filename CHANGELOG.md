@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-18
+
+### Fixed
+
+- `modules/aws/cloudfront-distribution` now grants `lambda:InvokeFunction` in addition to `lambda:InvokeFunctionUrl` on a lambda origin's resource policy. AWS has required both since ~October 2025 for CloudFront's OAC-signed requests to a Function URL to succeed — with only `InvokeFunctionUrl` (this module's prior behavior, and AWS's own long-documented pattern before that change), every request gets a 403 `AccessDeniedException` straight from the function URL itself, confirmed against a real, freshly-created distribution. Existing consumers get the added permission on their next apply — strictly additive, nothing removed.
+
 ## [1.6.0] - 2026-08-18
 
 ### Added

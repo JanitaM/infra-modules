@@ -83,5 +83,5 @@ forwarded_cookie_names      = ["__prerender_bypass"]
 
 - Requires a WAF web ACL (`web_acl_id`) — no default, plan fails without one
 - Forces `redirect-to-https` on every cache behavior — never plaintext HTTP to the viewer
-- Uses Origin Access Control (never a public bucket or public Function URL) for every origin, and provisions the matching bucket policy / Lambda permission itself
+- Uses Origin Access Control (never a public bucket or public Function URL) for every origin, and provisions the matching bucket policy / Lambda permissions itself — for a lambda origin, both `lambda:InvokeFunctionUrl` and `lambda:InvokeFunction` (AWS has required both since ~October 2025; OAC-signed requests get a 403 `AccessDeniedException` from the function URL with only the first, confirmed against real AWS)
 - HTTPS-only, TLS 1.2+ from CloudFront to Lambda origins

@@ -5,10 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-18
+
 ### Added
 
-- `modules/aws/waf`, plus `policy/aws/modules/waf.rego`'s rule requiring CloudWatch metrics on the web ACL. Generic across consumers — `scope`, `default_action`, `rate_based_rules`, and `ip_allowlist` are the only inputs, no project-specific concept. `examples/aws/basic-site` now uses it in place of its hand-rolled `aws_wafv2_web_acl`.
-- `modules/aws/acm`, plus `policy/aws/modules/acm.rego`'s rule forbidding `EMAIL` validation. Optionally self-validates via Route 53 (`zone_id`) in one apply, or issues the certificate alone for out-of-band validation.
+- `modules/aws/waf`, plus `policy/aws/modules/waf.rego`'s rule requiring CloudWatch metrics on the web ACL. Generic across consumers — `scope`, `default_action`, `rate_based_rules`, and `ip_allowlist` are the only inputs, no project-specific concept. Also hardcodes an `AWSManagedRulesKnownBadInputsRuleSet` managed rule group and CloudWatch Logs logging. `examples/aws/basic-site` now uses it in place of its hand-rolled `aws_wafv2_web_acl`.
+- `modules/aws/acm`, plus `policy/aws/modules/acm.rego`'s rule forbidding `EMAIL` validation. Issues the certificate only — `domain_validation_options` is output for the caller to wire into DNS records and an `aws_acm_certificate_validation` at the root config, since a self-validating design would force every caller into a two-phase `apply` on first create (AWS doesn't assign a validation record's name/value until the certificate exists).
 - `README.md` — "Requirements", "Contributing", and "License" sections, closing gaps found in a documentation audit: no prerequisites list, the branch-protection workflow written down nowhere a reader would find it, and no mention of the MIT license.
 - `README.md` — "State management" section: this repo doesn't provision Terraform state storage, so this documents the bootstrap pattern (use `modules/aws/s3-bucket` for the state bucket, native S3 backend locking, `terraform init -migrate-state`) so consumers don't default to unlocked local state in production. Each of the 3 examples now links to it instead of defaulting silently.
 - `SECURITY.md` — private vulnerability reporting via GitHub's Security tab, scope, and response expectations for this solo-maintainer repo.

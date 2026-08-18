@@ -47,6 +47,7 @@ module "site" {
 | `price_class` | `PriceClass_100`, `PriceClass_200`, or `PriceClass_All` | `string` | `"PriceClass_100"` |
 | `aliases` | Alternate domain names (CNAMEs) | `list(string)` | `[]` |
 | `acm_certificate_arn` | ACM cert ARN (us-east-1), required when `aliases` is set | `string` | `null` |
+| `default_cache_behavior_allowed_methods` | HTTP methods allowed on the default cache behavior | `list(string)` | `["GET", "HEAD"]` |
 | `forwarded_headers` | Request headers to forward to the origin and cache on, for the default cache behavior only | `list(string)` | `[]` |
 | `forwarded_query_string_keys` | Query string keys to forward and cache on, for the default cache behavior only. Non-empty does not mean "forward everything" — only these keys | `list(string)` | `[]` |
 | `forwarded_cookie_names` | Cookie names to forward and cache on, for the default cache behavior only | `list(string)` | `[]` |

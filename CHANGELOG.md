@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-18
+
+### Added
+
+- `default_cache_behavior_allowed_methods` on `modules/aws/cloudfront-distribution`. The default cache behavior previously hardcoded `allowed_methods = ["GET", "HEAD"]`, so no consumer could route write methods (POST/PUT/PATCH/DELETE) through the default behavior — e.g. proxying an API through CloudFront on the default path. Defaults to `["GET", "HEAD"]`, matching the module's original hardcoded behavior, so existing consumers are unaffected. `cached_methods` stays hardcoded to `["GET", "HEAD"]` regardless of this setting, since CloudFront never caches responses to write methods.
+
 ## [1.3.0] - 2026-08-18
 
 ### Added

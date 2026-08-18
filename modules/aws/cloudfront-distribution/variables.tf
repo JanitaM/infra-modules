@@ -54,6 +54,30 @@ variable "acm_certificate_arn" {
   default     = null
 }
 
+variable "forwarded_headers" {
+  type        = list(string)
+  description = "Request headers to forward to the origin and include in the default cache behavior's cache key. Leave empty to forward none, matching CloudFront's own default."
+  default     = []
+}
+
+variable "forwarded_query_string_keys" {
+  type        = list(string)
+  description = "Query string keys to forward to the origin and include in the default cache behavior's cache key. Leave empty to forward no query strings at all — non-empty does not mean 'forward everything', only these specific keys."
+  default     = []
+}
+
+variable "forwarded_cookie_names" {
+  type        = list(string)
+  description = "Cookie names to forward to the origin and include in the default cache behavior's cache key. Leave empty to forward no cookies at all."
+  default     = []
+}
+
+variable "response_headers_policy_id" {
+  type        = string
+  description = "ID of an aws_cloudfront_response_headers_policy to attach to every cache behavior (e.g. for CSP/HSTS/X-Frame-Options). This module does not author the policy itself — header content is inherently project-specific. Leave null to attach none."
+  default     = null
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags applied to the distribution."

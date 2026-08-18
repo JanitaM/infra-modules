@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-18
+
+### Added
+
+- `invoke_mode` on `modules/aws/lambda-function-url`. The Function URL previously had no way to opt into `RESPONSE_STREAM` — always `BUFFERED` by omission, AWS's own default — so a proxied app that streams its own response (e.g. via the Lambda Web Adapter's `AWS_LWA_INVOKE_MODE` env var) could set that adapter-level flag and still get buffered delivery, since the Function URL resource itself is a separate, required switch the adapter's env var doesn't reach. Defaults to `"BUFFERED"`, matching the module's original hardcoded behavior, so existing consumers are unaffected. Surfaced by a real consumer whose Lambda Web Adapter streaming behavior was already verified end-to-end via Docker/RIE, only to find the same streaming had no way to be requested from this module for the real Function URL.
+
 ## [1.5.0] - 2026-08-18
 
 ### Added

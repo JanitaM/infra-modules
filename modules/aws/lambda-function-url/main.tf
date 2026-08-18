@@ -59,4 +59,5 @@ resource "aws_lambda_function" "primary" {
 resource "aws_lambda_function_url" "primary" {
   function_name      = aws_lambda_function.primary.function_name
   authorization_type = "AWS_IAM"
+  invoke_mode        = var.invoke_mode
 }

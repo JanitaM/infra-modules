@@ -44,4 +44,34 @@ resource "aws_cognito_user_pool_client" "primary" {
   explicit_auth_flows = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
 
   prevent_user_existence_errors = "ENABLED"
+
+  # OAuth2/Hosted UI is opt-in — a client with no callback_urls stays SRP-only, matching this
+  # module's original behavior. See the check block below: enabling this without
+  # hosted_ui_domain_prefix is rejected by AWS at apply time (the pool needs a domain before
+  # any client on it can be OAuth-enabled).
+  allowed_oauth_flows_user_pool_client = length(var.callback_urls) > 0
+  allowed_oauth_flows                  = length(var.callback_urls) > 0 ? ["code"] : null
+  allowed_oauth_scopes                 = length(var.callback_urls) > 0 ? var.allowed_oauth_scopes : null
+  callback_urls                        = length(var.callback_urls) > 0 ? var.callback_urls : null
+  logout_urls                          = length(var.callback_urls) > 0 ? var.logout_urls : null
+  supported_identity_providers         = length(var.callback_urls) > 0 ? ["COGNITO"] : null
 }
+
+# AC-3/IA-2: the Hosted UI (and therefore any authorization-code flow at all) does not exist
+# without a domain on the pool — this is the resource that makes the authorize/token/logout
+# endpoints reachable in the first place. Opt-in via hosted_ui_domain_prefix; a consumer doing
+# only SRP auth needs none of this.
+resource "aws_cognito_user_pool_domain" "primary" {
+  count        = var.hosted_ui_domain_prefix != null ? 1 : 0
+  domain       = var.hosted_ui_domain_prefix
+  user_pool_id = aws_cognito_user_pool.primary.id
+}
+
+check "hosted_ui_domain_required_for_oauth" {
+  assert {
+    condition     = length(var.callback_urls) == 0 || var.hosted_ui_domain_prefix != null
+    error_message = "hosted_ui_domain_prefix is required when callback_urls is set — AWS rejects an OAuth-enabled client on a pool with no Hosted UI domain."
+  }
+}
+
+data "aws_region" "current" {}

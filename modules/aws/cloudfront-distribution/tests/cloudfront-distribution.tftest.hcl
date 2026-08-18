@@ -28,6 +28,11 @@ run "single_default_origin_gets_no_ordered_behavior_or_lambda_permission" {
     condition     = length(aws_lambda_permission.primary) == 0
     error_message = "no lambda permission should be created when there is no lambda origin"
   }
+
+  assert {
+    condition     = length(aws_lambda_permission.primary_invoke_function) == 0
+    error_message = "no InvokeFunction permission should be created when there is no lambda origin"
+  }
 }
 
 run "lambda_origin_with_path_pattern_gets_ordered_behavior_and_permission" {
@@ -55,6 +60,16 @@ run "lambda_origin_with_path_pattern_gets_ordered_behavior_and_permission" {
   assert {
     condition     = length(aws_lambda_permission.primary) == 1
     error_message = "a lambda permission should be created for the lambda origin"
+  }
+
+  assert {
+    condition     = length(aws_lambda_permission.primary_invoke_function) == 1
+    error_message = "an InvokeFunction permission should be created for the lambda origin, alongside InvokeFunctionUrl"
+  }
+
+  assert {
+    condition     = values(aws_lambda_permission.primary_invoke_function)[0].action == "lambda:InvokeFunction"
+    error_message = "the second permission should grant lambda:InvokeFunction specifically"
   }
 
   assert {

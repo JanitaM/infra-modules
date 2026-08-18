@@ -159,3 +159,18 @@ resource "aws_lambda_permission" "primary" {
   source_arn             = aws_cloudfront_distribution.primary.arn
   function_url_auth_type = "AWS_IAM"
 }
+
+# AC-3: as of ~October 2025, AWS also requires an explicit lambda:InvokeFunction grant
+# alongside lambda:InvokeFunctionUrl for CloudFront's OAC-signed requests to succeed — without
+# it, every request gets a 403 AccessDeniedException from the function URL itself, confirmed
+# against real AWS (see this module's CHANGELOG). function_url_auth_type is specific to the
+# InvokeFunctionUrl action and doesn't apply here.
+resource "aws_lambda_permission" "primary_invoke_function" {
+  for_each = { for o in var.origins : o.origin_id => o if o.origin_type == "lambda" }
+
+  statement_id  = "AllowCloudFrontInvokeFunction-${each.key}"
+  action        = "lambda:InvokeFunction"
+  function_name = each.value.function_name
+  principal     = "cloudfront.amazonaws.com"
+  source_arn    = aws_cloudfront_distribution.primary.arn
+}

@@ -54,6 +54,20 @@ variable "acm_certificate_arn" {
   default     = null
 }
 
+variable "default_cache_behavior_allowed_methods" {
+  type        = list(string)
+  description = "HTTP methods allowed on the default cache behavior. Defaults to GET/HEAD only, matching this module's original hardcoded behavior."
+  default     = ["GET", "HEAD"]
+
+  validation {
+    condition = alltrue([
+      for m in var.default_cache_behavior_allowed_methods :
+      contains(["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"], m)
+    ])
+    error_message = "default_cache_behavior_allowed_methods may only contain GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE."
+  }
+}
+
 variable "forwarded_headers" {
   type        = list(string)
   description = "Request headers to forward to the origin and include in the default cache behavior's cache key. Leave empty to forward none, matching CloudFront's own default."

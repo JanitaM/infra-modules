@@ -140,6 +140,11 @@ run "no_forwarding_by_default_matches_original_hardcoded_behavior" {
     condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].response_headers_policy_id == null
     error_message = "no response headers policy should be attached by default"
   }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].allowed_methods == toset(["GET", "HEAD"])
+    error_message = "allowed_methods should default to GET/HEAD only, matching this module's original hardcoded behavior"
+  }
 }
 
 run "forwarding_config_reaches_the_default_cache_behavior" {
@@ -181,6 +186,34 @@ run "forwarding_config_reaches_the_default_cache_behavior" {
     condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].response_headers_policy_id == "abc123"
     error_message = "response_headers_policy_id should be attached to the default cache behavior"
   }
+}
+
+run "allowed_methods_override_reaches_the_default_cache_behavior" {
+  command = plan
+
+  variables {
+    default_cache_behavior_allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].allowed_methods == toset(["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"])
+    error_message = "allowed_methods should match var.default_cache_behavior_allowed_methods"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].cached_methods == toset(["GET", "HEAD"])
+    error_message = "cached_methods should stay hardcoded to GET/HEAD regardless of allowed_methods"
+  }
+}
+
+run "rejects_invalid_default_cache_behavior_allowed_method" {
+  command = plan
+
+  variables {
+    default_cache_behavior_allowed_methods = ["BOGUS"]
+  }
+
+  expect_failures = [var.default_cache_behavior_allowed_methods]
 }
 
 run "response_headers_policy_reaches_ordered_cache_behavior_too" {

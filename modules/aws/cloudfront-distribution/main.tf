@@ -59,7 +59,7 @@ resource "aws_cloudfront_distribution" "primary" {
   default_cache_behavior {
     target_origin_id = var.default_origin_id
 
-    allowed_methods = ["GET", "HEAD"]
+    allowed_methods = var.default_cache_behavior_allowed_methods
     cached_methods  = ["GET", "HEAD"]
 
     # Empty forwarded_headers/forwarded_query_string_keys/forwarded_cookie_names reproduce

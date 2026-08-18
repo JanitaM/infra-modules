@@ -62,12 +62,23 @@ resource "aws_cloudfront_distribution" "primary" {
     allowed_methods = ["GET", "HEAD"]
     cached_methods  = ["GET", "HEAD"]
 
+    # Empty forwarded_headers/forwarded_query_string_keys/forwarded_cookie_names reproduce
+    # this module's original hardcoded behavior (forward nothing) exactly, so existing
+    # consumers are unaffected. Non-empty forwards and cache-keys on only those specific
+    # headers/query-string-keys/cookie names — never "forward everything" on the default
+    # behavior, which stays the ordered_cache_behavior's job below.
     forwarded_values {
-      query_string = false
+      query_string            = length(var.forwarded_query_string_keys) > 0
+      query_string_cache_keys = var.forwarded_query_string_keys
+      headers                 = var.forwarded_headers
+
       cookies {
-        forward = "none"
+        forward           = length(var.forwarded_cookie_names) > 0 ? "whitelist" : "none"
+        whitelisted_names = var.forwarded_cookie_names
       }
     }
+
+    response_headers_policy_id = var.response_headers_policy_id
 
     # SC-8: no opt-out for plaintext HTTP to the viewer.
     viewer_protocol_policy = "redirect-to-https"
@@ -88,6 +99,8 @@ resource "aws_cloudfront_distribution" "primary" {
           forward = "all"
         }
       }
+
+      response_headers_policy_id = var.response_headers_policy_id
 
       # SC-8: no opt-out for plaintext HTTP to the viewer.
       viewer_protocol_policy = "redirect-to-https"

@@ -117,3 +117,97 @@ run "rejects_invalid_price_class" {
 
   expect_failures = [var.price_class]
 }
+
+run "no_forwarding_by_default_matches_original_hardcoded_behavior" {
+  command = plan
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].query_string == false
+    error_message = "query_string should default to false, matching this module's original hardcoded behavior"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].cookies[0].forward == "none"
+    error_message = "cookie forwarding should default to none, matching this module's original hardcoded behavior"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].headers) == 0
+    error_message = "no headers should be forwarded by default"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].response_headers_policy_id == null
+    error_message = "no response headers policy should be attached by default"
+  }
+}
+
+run "forwarding_config_reaches_the_default_cache_behavior" {
+  command = plan
+
+  variables {
+    forwarded_headers          = ["rsc"]
+    forwarded_query_string_keys = ["_rsc"]
+    forwarded_cookie_names      = ["__prerender_bypass"]
+    response_headers_policy_id  = "abc123"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].query_string == true
+    error_message = "query_string should be true when forwarded_query_string_keys is non-empty"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].query_string_cache_keys == tolist(["_rsc"])
+    error_message = "query_string_cache_keys should match var.forwarded_query_string_keys"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].headers == toset(["rsc"])
+    error_message = "headers should match var.forwarded_headers"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].cookies[0].forward == "whitelist"
+    error_message = "cookie forwarding should switch to whitelist when forwarded_cookie_names is non-empty"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values[0].cookies[0].whitelisted_names == toset(["__prerender_bypass"])
+    error_message = "whitelisted_names should match var.forwarded_cookie_names"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].response_headers_policy_id == "abc123"
+    error_message = "response_headers_policy_id should be attached to the default cache behavior"
+  }
+}
+
+run "response_headers_policy_reaches_ordered_cache_behavior_too" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id   = "s3-origin"
+        origin_type = "s3"
+        domain_name = "bucket.s3.amazonaws.com"
+        bucket_id   = "my-bucket"
+        bucket_arn  = "arn:aws:s3:::my-bucket"
+      },
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+        path_pattern  = "/api/*"
+      },
+    ]
+    response_headers_policy_id = "abc123"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].response_headers_policy_id == "abc123"
+    error_message = "response_headers_policy_id should be attached to ordered cache behaviors too"
+  }
+}

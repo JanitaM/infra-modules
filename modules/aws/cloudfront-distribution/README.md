@@ -47,7 +47,27 @@ module "site" {
 | `price_class` | `PriceClass_100`, `PriceClass_200`, or `PriceClass_All` | `string` | `"PriceClass_100"` |
 | `aliases` | Alternate domain names (CNAMEs) | `list(string)` | `[]` |
 | `acm_certificate_arn` | ACM cert ARN (us-east-1), required when `aliases` is set | `string` | `null` |
+| `forwarded_headers` | Request headers to forward to the origin and cache on, for the default cache behavior only | `list(string)` | `[]` |
+| `forwarded_query_string_keys` | Query string keys to forward and cache on, for the default cache behavior only. Non-empty does not mean "forward everything" — only these keys | `list(string)` | `[]` |
+| `forwarded_cookie_names` | Cookie names to forward and cache on, for the default cache behavior only | `list(string)` | `[]` |
+| `response_headers_policy_id` | ID of an `aws_cloudfront_response_headers_policy` to attach to every cache behavior (e.g. for CSP/HSTS). This module doesn't author the policy itself — header content is project-specific | `string` | `null` |
 | `tags` | Tags applied to the distribution | `map(string)` | `{}` |
+
+### Cache-forwarding on the default behavior
+
+By default the default cache behavior forwards nothing (matching every version of this module
+before `forwarded_headers`/`forwarded_query_string_keys`/`forwarded_cookie_names` existed).
+Setting any of the three switches that specific dimension on, scoped to exactly the
+names/keys given — never "forward everything" on the default behavior, which stays the
+`ordered_cache_behavior`s' job (each already forwards all query strings and cookies to its
+own path-routed origin). This is enough to express, for example, a Next.js RSC caching
+contract in front of a dynamic origin:
+
+```hcl
+forwarded_headers          = ["rsc"]
+forwarded_query_string_keys = ["_rsc"]
+forwarded_cookie_names      = ["__prerender_bypass"]
+```
 
 ## Outputs
 

@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `hosted_ui_domain_prefix`, `callback_urls`, `logout_urls`, and `allowed_oauth_scopes` on `modules/aws/cognito`, plus a `hosted_ui_domain` output. The module previously created a user pool client capable only of direct SRP auth — no Cognito-hosted domain, and the client had no OAuth2 settings — so a consumer wanting an authorization-code/Hosted UI login flow (an app redirecting to Cognito rather than calling SRP itself) had nothing to point its OIDC config at. All four inputs default to off/empty, matching the module's original SRP-only behavior; a new `check` block rejects `callback_urls` set without `hosted_ui_domain_prefix`, since AWS itself rejects an OAuth-enabled client on a pool with no Hosted UI domain. Surfaced by a real consumer's `apps/admin` expecting a full `authorizationEndpoint`/`tokenEndpoint`/`logoutEndpoint`/`revokeEndpoint` OIDC config against a pool this module had already created with none of that wired up.
+
 ## [1.4.0] - 2026-08-18
 
 ### Added

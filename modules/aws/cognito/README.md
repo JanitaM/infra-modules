@@ -19,6 +19,34 @@ module "users" {
 }
 ```
 
+For an OIDC/OAuth2 login flow (an app redirecting to Cognito's Hosted UI rather than calling SRP directly), also set `hosted_ui_domain_prefix` and `callback_urls`:
+
+```hcl
+module "users" {
+  source = "github.com/JanitaM/infra-modules//modules/aws/cognito?ref=v1.5.0"
+
+  user_pool_name = "example-users"
+  client_name    = "example-web-client"
+
+  hosted_ui_domain_prefix = "example-app-auth" # must be globally unique across all AWS accounts
+  callback_urls           = ["https://example.com/api/auth/callback"]
+  logout_urls             = ["https://example.com/"]
+
+  tags = {
+    project = "example"
+  }
+}
+```
+
+Build the OIDC endpoints from the module's outputs:
+
+- `issuer` = `https://cognito-idp.<region>.amazonaws.com/${user_pool_id}`
+- `authorization_endpoint` = `https://${hosted_ui_domain}/oauth2/authorize`
+- `token_endpoint` = `https://${hosted_ui_domain}/oauth2/token`
+- `jwks_uri` = `${issuer}/.well-known/jwks.json`
+- `logout_endpoint` = `https://${hosted_ui_domain}/logout`
+- `revoke_endpoint` = `https://${hosted_ui_domain}/oauth2/revoke`
+
 ## Inputs
 
 | Name | Description | Type | Default |
@@ -27,6 +55,10 @@ module "users" {
 | `client_name` | Name of the user pool client (app client) | `string` | `"app-client"` |
 | `auto_verified_attributes` | Attributes Cognito auto-verifies; entries must be `email` or `phone_number` | `list(string)` | `["email"]` |
 | `tags` | Tags applied to the user pool | `map(string)` | `{}` |
+| `hosted_ui_domain_prefix` | Prefix for the Cognito-hosted domain that makes the Hosted UI's authorize/token/logout endpoints exist at all. Must be globally unique across all AWS accounts. `null` creates no domain | `string` | `null` |
+| `callback_urls` | Allowed OAuth2 redirect URIs. Non-empty turns on the app client's authorization-code flow; requires `hosted_ui_domain_prefix` to be set | `list(string)` | `[]` |
+| `logout_urls` | Allowed post-logout redirect URIs. Only meaningful when `callback_urls` is set | `list(string)` | `[]` |
+| `allowed_oauth_scopes` | OAuth scopes granted to the authorization-code flow. Only meaningful when `callback_urls` is set | `list(string)` | `["openid", "email", "profile"]` |
 
 ## Outputs
 
@@ -36,6 +68,7 @@ module "users" {
 | `user_pool_arn` | User pool ARN |
 | `user_pool_client_id` | App client ID |
 | `user_pool_endpoint` | User pool endpoint, for constructing hosted-UI / token URLs |
+| `hosted_ui_domain` | Hosted UI's base domain (`null` unless `hosted_ui_domain_prefix` is set) — build `authorize`/`token`/`logout` URLs from it as shown above |
 
 ## What this module always does, with no opt-out
 

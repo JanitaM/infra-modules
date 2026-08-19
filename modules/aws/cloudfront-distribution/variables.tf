@@ -86,6 +86,18 @@ variable "forwarded_cookie_names" {
   default     = []
 }
 
+variable "cache_policy_id" {
+  type        = string
+  description = "ID of an aws_cloudfront_cache_policy to attach to every cache behavior, replacing the legacy forwarded_values block (and its implicit TTL defaults) entirely. Mutually exclusive with forwarded_headers/forwarded_query_string_keys/forwarded_cookie_names. This module does not author the policy itself. Leave null to keep the module's original forwarded_values-based behavior."
+  default     = null
+}
+
+variable "origin_request_policy_id" {
+  type        = string
+  description = "ID of an aws_cloudfront_origin_request_policy to attach to every cache behavior. Only meaningful alongside cache_policy_id. Leave null to attach none."
+  default     = null
+}
+
 variable "response_headers_policy_id" {
   type        = string
   description = "ID of an aws_cloudfront_response_headers_policy to attach to every cache behavior (e.g. for CSP/HSTS/X-Frame-Options). This module does not author the policy itself — header content is inherently project-specific. Leave null to attach none."

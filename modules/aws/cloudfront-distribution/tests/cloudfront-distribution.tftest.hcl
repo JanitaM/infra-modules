@@ -259,3 +259,64 @@ run "response_headers_policy_reaches_ordered_cache_behavior_too" {
     error_message = "response_headers_policy_id should be attached to ordered cache behaviors too"
   }
 }
+
+run "cache_policy_id_replaces_forwarded_values" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id   = "s3-origin"
+        origin_type = "s3"
+        domain_name = "bucket.s3.amazonaws.com"
+        bucket_id   = "my-bucket"
+        bucket_arn  = "arn:aws:s3:::my-bucket"
+      },
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+        path_pattern  = "/api/*"
+      },
+    ]
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].forwarded_values) == 0
+    error_message = "forwarded_values should be omitted from the default cache behavior when cache_policy_id is set"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].cache_policy_id == "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    error_message = "cache_policy_id should be attached to the default cache behavior"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].origin_request_policy_id == "216adef6-5c7f-47e4-b989-5492eafa07d3"
+    error_message = "origin_request_policy_id should be attached to the default cache behavior"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].forwarded_values) == 0
+    error_message = "forwarded_values should be omitted from ordered cache behaviors too when cache_policy_id is set"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].cache_policy_id == "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    error_message = "cache_policy_id should be attached to ordered cache behaviors too"
+  }
+}
+
+run "rejects_cache_policy_id_with_forwarded_values" {
+  command = plan
+
+  variables {
+    cache_policy_id   = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    forwarded_headers = ["rsc"]
+  }
+
+  expect_failures = [check.cache_policy_excludes_forwarded_values]
+}

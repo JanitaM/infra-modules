@@ -48,6 +48,12 @@ variable "ip_allowlist" {
   default     = null
 }
 
+variable "enable_logging" {
+  type        = bool
+  description = "Whether the web ACL logs to CloudWatch. Defaults to true, matching the module's original hardcoded behavior. Set false where the target CloudFront pricing tier doesn't include WAF access logs (e.g. Free)."
+  default     = true
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags applied to the web ACL and its IP set."

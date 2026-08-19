@@ -51,6 +51,8 @@ module "site" {
 | `forwarded_headers` | Request headers to forward to the origin and cache on, for the default cache behavior only | `list(string)` | `[]` |
 | `forwarded_query_string_keys` | Query string keys to forward and cache on, for the default cache behavior only. Non-empty does not mean "forward everything" — only these keys | `list(string)` | `[]` |
 | `forwarded_cookie_names` | Cookie names to forward and cache on, for the default cache behavior only | `list(string)` | `[]` |
+| `cache_policy_id` | ID of an `aws_cloudfront_cache_policy` to attach to every cache behavior, replacing `forwarded_values` (and its implicit legacy TTLs) entirely. Mutually exclusive with `forwarded_headers`/`forwarded_query_string_keys`/`forwarded_cookie_names`. This module doesn't author the policy itself | `string` | `null` |
+| `origin_request_policy_id` | ID of an `aws_cloudfront_origin_request_policy` to attach to every cache behavior. Only meaningful alongside `cache_policy_id` | `string` | `null` |
 | `response_headers_policy_id` | ID of an `aws_cloudfront_response_headers_policy` to attach to every cache behavior (e.g. for CSP/HSTS). This module doesn't author the policy itself — header content is project-specific | `string` | `null` |
 | `tags` | Tags applied to the distribution | `map(string)` | `{}` |
 
@@ -69,6 +71,23 @@ forwarded_headers          = ["rsc"]
 forwarded_query_string_keys = ["_rsc"]
 forwarded_cookie_names      = ["__prerender_bypass"]
 ```
+
+### Cache Policy / Origin Request Policy instead of legacy forwarding
+
+Setting `cache_policy_id` replaces `forwarded_values` on every cache behavior entirely — AWS's
+CloudFront API rejects a behavior with both set, and a `check` block in this module enforces
+that `forwarded_headers`/`forwarded_query_string_keys`/`forwarded_cookie_names` stay empty
+whenever `cache_policy_id` is set. This module doesn't create the policy itself (same as
+`response_headers_policy_id`); create an `aws_cloudfront_cache_policy` (and optionally an
+`aws_cloudfront_origin_request_policy`) alongside this module and pass their IDs in:
+
+```hcl
+cache_policy_id           = aws_cloudfront_cache_policy.example.id
+origin_request_policy_id = aws_cloudfront_origin_request_policy.example.id
+```
+
+Some CloudFront pricing-plan tiers require moving off the legacy `forwarded_values`/implicit-TTL
+behavior entirely — this is how to do that without hand-rolling the distribution.
 
 ## Outputs
 

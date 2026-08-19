@@ -5,6 +5,15 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-08-19
+
+### Added
+
+- `cache_policy_id` and `origin_request_policy_id` on `modules/aws/cloudfront-distribution`. The default and ordered cache behaviors previously always used the legacy `forwarded_values` block with no way to attach a modern Cache Policy / Origin Request Policy instead, and never set `min_ttl`/`default_ttl`/`max_ttl`, so AWS's legacy TTL defaults applied implicitly — a real consumer's CloudFront distribution was blocked from confirming *any* flat-rate pricing-plan tier (Free included) by AWS's tier-eligibility check, which flags `ForwardedValues`/legacy cache settings as unsupported (confirmed against AWS's own flat-rate-pricing-plan docs and the consumer's live distribution via `aws cloudfront get-distribution-config`). Setting `cache_policy_id` now drops `forwarded_values` entirely (AWS rejects a behavior with both set — enforced by a new `check` block) in favor of the policy's own TTLs and forwarding rules. Both default to `null`, matching the module's original hardcoded `forwarded_values`-based behavior, so existing consumers are unaffected. As with `response_headers_policy_id`, this module doesn't author the policy content itself — the caller creates the `aws_cloudfront_cache_policy`/`aws_cloudfront_origin_request_policy` resources and passes in their IDs.
+- `enable_logging` on `modules/aws/waf`. WAF access logging was previously always on with no opt-out; AWS's flat-rate-pricing-plan tier documentation lists WAF request logs as a Pro-tier-and-above feature, so a web ACL with unconditional logging blocks Free-tier eligibility for its CloudFront distribution. Defaults to `true`, matching the module's original hardcoded behavior, so existing consumers are unaffected. Surfaced by the same real consumer's tier-eligibility investigation as the cache-policy change above — both gaps were confirmed live against the same blocked distribution.
+
+Investigated but deliberately left unchanged: the same consumer's tier-eligibility check also flags a `byte_match_statement` scope-down statement on a rate-based rule ("byte match"). AWS's official flat-rate-pricing-plan docs (both the "Unsupported features" and "Features by pricing plan tier" tables) don't mention byte-match, scope-down statements, or rate-based rules at all, so there's no documented basis for picking an alternative statement type or for concluding lower tiers disallow scope-down statements entirely — either would be a guess. No code change is made here; the consumer should retest tier eligibility after adopting the two changes above (which should clear 4 of the 5 flagged items) to isolate whether "byte match" is still blocking before this gets its own follow-up.
+
 ## [1.7.0] - 2026-08-18
 
 ### Fixed

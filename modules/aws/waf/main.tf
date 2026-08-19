@@ -151,14 +151,20 @@ resource "aws_wafv2_web_acl" "primary" {
 
 # WAF only accepts CloudWatch Logs destinations named with this exact prefix
 # — AWS grants the WAF service write access to it implicitly, no resource
-# policy needed. No opt-out: every web ACL always logs.
+# policy needed. Gated by var.enable_logging (default true, matching this
+# module's original hardcoded behavior) — some CloudFront pricing tiers don't
+# include WAF access logs at all.
 resource "aws_cloudwatch_log_group" "waf" {
+  count = var.enable_logging ? 1 : 0
+
   name              = "aws-waf-logs-${var.web_acl_name}"
   retention_in_days = 90
   tags              = var.tags
 }
 
 resource "aws_wafv2_web_acl_logging_configuration" "primary" {
+  count = var.enable_logging ? 1 : 0
+
   resource_arn            = aws_wafv2_web_acl.primary.arn
-  log_destination_configs = [aws_cloudwatch_log_group.waf.arn]
+  log_destination_configs = [aws_cloudwatch_log_group.waf[0].arn]
 }

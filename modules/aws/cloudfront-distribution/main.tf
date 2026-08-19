@@ -15,6 +15,20 @@ check "origin_routing" {
   }
 }
 
+# AWS's CloudFront API rejects a cache behavior that sets both cache_policy_id
+# and forwarded_values — cache_policy_id replaces forwarded_values entirely,
+# it doesn't compose with it.
+check "cache_policy_excludes_forwarded_values" {
+  assert {
+    condition = var.cache_policy_id == null || (
+      length(var.forwarded_headers) == 0 &&
+      length(var.forwarded_query_string_keys) == 0 &&
+      length(var.forwarded_cookie_names) == 0
+    )
+    error_message = "cache_policy_id is mutually exclusive with forwarded_headers/forwarded_query_string_keys/forwarded_cookie_names — AWS's CloudFront API rejects a cache behavior with both a Cache Policy and legacy forwarded values set. Configure equivalent forwarding on the Cache Policy/Origin Request Policy instead."
+  }
+}
+
 # Lets CloudFront sign requests to each origin: S3-type signs REST API calls to
 # a private bucket, lambda-type signs calls to an AWS_IAM-only Function URL.
 resource "aws_cloudfront_origin_access_control" "primary" {
@@ -62,22 +76,29 @@ resource "aws_cloudfront_distribution" "primary" {
     allowed_methods = var.default_cache_behavior_allowed_methods
     cached_methods  = ["GET", "HEAD"]
 
-    # Empty forwarded_headers/forwarded_query_string_keys/forwarded_cookie_names reproduce
-    # this module's original hardcoded behavior (forward nothing) exactly, so existing
-    # consumers are unaffected. Non-empty forwards and cache-keys on only those specific
+    # Leaving cache_policy_id null reproduces this module's original hardcoded
+    # forwarded_values behavior (forward nothing by default) exactly, so existing
+    # consumers are unaffected. Setting it replaces forwarded_values entirely — AWS
+    # rejects a behavior with both set (see the cache_policy_excludes_forwarded_values
+    # check above). Non-empty forwards and cache-keys on only those specific
     # headers/query-string-keys/cookie names — never "forward everything" on the default
     # behavior, which stays the ordered_cache_behavior's job below.
-    forwarded_values {
-      query_string            = length(var.forwarded_query_string_keys) > 0
-      query_string_cache_keys = var.forwarded_query_string_keys
-      headers                 = var.forwarded_headers
+    dynamic "forwarded_values" {
+      for_each = var.cache_policy_id == null ? [1] : []
+      content {
+        query_string            = length(var.forwarded_query_string_keys) > 0
+        query_string_cache_keys = var.forwarded_query_string_keys
+        headers                 = var.forwarded_headers
 
-      cookies {
-        forward           = length(var.forwarded_cookie_names) > 0 ? "whitelist" : "none"
-        whitelisted_names = var.forwarded_cookie_names
+        cookies {
+          forward           = length(var.forwarded_cookie_names) > 0 ? "whitelist" : "none"
+          whitelisted_names = var.forwarded_cookie_names
+        }
       }
     }
 
+    cache_policy_id            = var.cache_policy_id
+    origin_request_policy_id   = var.origin_request_policy_id
     response_headers_policy_id = var.response_headers_policy_id
 
     # SC-8: no opt-out for plaintext HTTP to the viewer.
@@ -93,13 +114,18 @@ resource "aws_cloudfront_distribution" "primary" {
       allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
       cached_methods  = ["GET", "HEAD"]
 
-      forwarded_values {
-        query_string = true
-        cookies {
-          forward = "all"
+      dynamic "forwarded_values" {
+        for_each = var.cache_policy_id == null ? [1] : []
+        content {
+          query_string = true
+          cookies {
+            forward = "all"
+          }
         }
       }
 
+      cache_policy_id            = var.cache_policy_id
+      origin_request_policy_id   = var.origin_request_policy_id
       response_headers_policy_id = var.response_headers_policy_id
 
       # SC-8: no opt-out for plaintext HTTP to the viewer.

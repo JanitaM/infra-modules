@@ -44,6 +44,7 @@ module "site" {
 | `default_action` | `allow` or `block` for requests matching no rule | `string` | `"allow"` |
 | `rate_based_rules` | Rate limits per source IP, optionally scoped to a `uri_path_prefix`. Each entry: `name`, `limit`, `evaluation_window_sec` (default `300`), `uri_path_prefix` (optional), `action` (`allow`/`block`/`count`, default `"block"`) | `list(object(...))` | `[]` |
 | `ip_allowlist` | IPv4 CIDRs to allow; every other source is blocked | `list(string)` | `null` |
+| `enable_logging` | Whether the web ACL logs to CloudWatch. Set `false` where the target CloudFront pricing tier doesn't include WAF access logs (e.g. Free) | `bool` | `true` |
 | `tags` | Tags applied to the web ACL and its IP set | `map(string)` | `{}` |
 
 ## Outputs
@@ -56,6 +57,9 @@ module "site" {
 ## What this module always does, with no opt-out
 
 - Reports CloudWatch metrics for the web ACL and every rule — see `policy/aws/modules/waf.rego`
-- Logs every request to a `aws-waf-logs-<web_acl_name>` CloudWatch Logs group
 - Includes the AWS-managed `AWSManagedRulesKnownBadInputsRuleSet` rule group (covers Log4Shell/CVE-2021-44228 request signatures, among other known-bad-input patterns), at priority `1`
 - When `ip_allowlist` is set, enforces it at priority `0` (evaluated first, before every other rule, including the managed rule group), regardless of `default_action`
+
+By default (`enable_logging = true`) this module also logs every request to a
+`aws-waf-logs-<web_acl_name>` CloudWatch Logs group; set `enable_logging = false` to skip both
+that log group and the logging configuration entirely.

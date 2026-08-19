@@ -25,8 +25,26 @@ run "only_the_managed_rule_group_by_default" {
   }
 
   assert {
-    condition     = aws_cloudwatch_log_group.waf.name == "aws-waf-logs-test-waf"
+    condition     = aws_cloudwatch_log_group.waf[0].name == "aws-waf-logs-test-waf"
     error_message = "the log group name must carry the aws-waf-logs- prefix WAF requires"
+  }
+}
+
+run "logging_disabled_creates_no_log_group_or_logging_configuration" {
+  command = plan
+
+  variables {
+    enable_logging = false
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.waf) == 0
+    error_message = "no log group should be created when enable_logging is false"
+  }
+
+  assert {
+    condition     = length(aws_wafv2_web_acl_logging_configuration.primary) == 0
+    error_message = "no logging configuration should be created when enable_logging is false"
   }
 }
 

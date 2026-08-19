@@ -280,7 +280,7 @@ run "cache_policy_id_replaces_forwarded_values" {
         path_pattern  = "/api/*"
       },
     ]
-    cache_policy_id           = "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6"
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3"
   }
 

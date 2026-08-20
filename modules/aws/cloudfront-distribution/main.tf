@@ -114,8 +114,11 @@ resource "aws_cloudfront_distribution" "primary" {
       allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
       cached_methods  = ["GET", "HEAD"]
 
+      # An origin's own cache_policy_id (set on var.origins) wins over the module-level
+      # var.cache_policy_id, so one path_pattern on a shared origin can get a different
+      # cache policy than the default behavior without a second module instance.
       dynamic "forwarded_values" {
-        for_each = var.cache_policy_id == null ? [1] : []
+        for_each = (ordered_cache_behavior.value.cache_policy_id != null ? ordered_cache_behavior.value.cache_policy_id : var.cache_policy_id) == null ? [1] : []
         content {
           query_string = true
           cookies {
@@ -124,9 +127,9 @@ resource "aws_cloudfront_distribution" "primary" {
         }
       }
 
-      cache_policy_id            = var.cache_policy_id
-      origin_request_policy_id   = var.origin_request_policy_id
-      response_headers_policy_id = var.response_headers_policy_id
+      cache_policy_id            = ordered_cache_behavior.value.cache_policy_id != null ? ordered_cache_behavior.value.cache_policy_id : var.cache_policy_id
+      origin_request_policy_id   = ordered_cache_behavior.value.origin_request_policy_id != null ? ordered_cache_behavior.value.origin_request_policy_id : var.origin_request_policy_id
+      response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id != null ? ordered_cache_behavior.value.response_headers_policy_id : var.response_headers_policy_id
 
       # SC-8: no opt-out for plaintext HTTP to the viewer.
       viewer_protocol_policy = "redirect-to-https"

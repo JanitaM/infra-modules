@@ -1,14 +1,17 @@
 variable "origins" {
   type = list(object({
-    origin_id     = string
-    origin_type   = string           # "s3" or "lambda"
-    domain_name   = string           # bucket_regional_domain_name, or the function URL's host
-    bucket_id     = optional(string) # required when origin_type == "s3"
-    bucket_arn    = optional(string) # required when origin_type == "s3"
-    function_name = optional(string) # required when origin_type == "lambda"
-    path_pattern  = optional(string) # required unless origin_id == var.default_origin_id
+    origin_id                  = string
+    origin_type                = string           # "s3" or "lambda"
+    domain_name                = string           # bucket_regional_domain_name, or the function URL's host
+    bucket_id                  = optional(string) # required when origin_type == "s3"
+    bucket_arn                 = optional(string) # required when origin_type == "s3"
+    function_name              = optional(string) # required when origin_type == "lambda"
+    path_pattern               = optional(string) # required unless origin_id == var.default_origin_id
+    cache_policy_id            = optional(string) # ordered_cache_behavior only — overrides var.cache_policy_id for this origin's behavior. Same origin, different path_pattern, different cache policy (e.g. a static-asset path on the same Lambda origin as the default behavior) is exactly what this is for.
+    origin_request_policy_id   = optional(string) # ordered_cache_behavior only — overrides var.origin_request_policy_id for this origin's behavior
+    response_headers_policy_id = optional(string) # ordered_cache_behavior only — overrides var.response_headers_policy_id for this origin's behavior
   }))
-  description = "Origins to attach to the distribution. Exactly one must have origin_id == default_origin_id; every other origin needs path_pattern to be routable."
+  description = "Origins to attach to the distribution. Exactly one must have origin_id == default_origin_id; every other origin needs path_pattern to be routable. An origin may repeat another origin's domain_name/function_name under a distinct origin_id to give one more path_pattern its own cache_policy_id without affecting the default behavior."
 
   validation {
     condition     = alltrue([for o in var.origins : contains(["s3", "lambda"], o.origin_type)])

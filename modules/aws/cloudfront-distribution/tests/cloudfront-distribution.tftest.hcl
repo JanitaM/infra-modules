@@ -310,6 +310,75 @@ run "cache_policy_id_replaces_forwarded_values" {
   }
 }
 
+run "per_origin_cache_policy_id_overrides_module_level_default_on_its_own_behavior_only" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id     = "web-app"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+      },
+      {
+        origin_id       = "web-app-static"
+        origin_type     = "lambda"
+        domain_name     = "abc123.lambda-url.us-east-1.on.aws"
+        function_name   = "my-function"
+        path_pattern    = "/_next/static/*"
+        cache_policy_id = "658327ea-f89d-4fab-a63d-7e88639e58f6" # Managed-CachingOptimized
+      },
+    ]
+    default_origin_id = "web-app"
+    cache_policy_id   = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].cache_policy_id == "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    error_message = "default cache behavior should keep the module-level cache_policy_id"
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].cache_policy_id == "658327ea-f89d-4fab-a63d-7e88639e58f6"
+    error_message = "the ordered cache behavior should use its origin's own cache_policy_id, not the module-level default"
+  }
+
+  assert {
+    condition     = length(aws_lambda_permission.primary) == 2
+    error_message = "each origin_id sharing the same function should still get its own InvokeFunctionUrl permission grant"
+  }
+}
+
+run "per_origin_cache_policy_id_falls_back_to_module_level_default_when_unset" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id     = "web-app"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+      },
+      {
+        origin_id     = "web-app-images"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+        path_pattern  = "/_next/image*"
+      },
+    ]
+    default_origin_id = "web-app"
+    cache_policy_id   = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # Managed-CachingDisabled
+  }
+
+  assert {
+    condition     = tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].cache_policy_id == "4135ea2d-6df8-44a3-9df3-4b5a84be39ad"
+    error_message = "an origin with no cache_policy_id of its own should fall back to the module-level default, not go unset"
+  }
+}
+
 run "rejects_cache_policy_id_with_forwarded_values" {
   command = plan
 

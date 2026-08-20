@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-08-20
+
+### Added
+
+- Per-origin `cache_policy_id`/`origin_request_policy_id`/`response_headers_policy_id` on `modules/aws/cloudfront-distribution`'s `origins` entries. The module-level vars of the same name previously applied to every cache behavior — default and ordered alike — with no way to give one `path_pattern` a different cache policy than the rest of the distribution while still targeting the same underlying origin (e.g. a Lambda origin whose default behavior must stay `CachingDisabled` for RSC/dynamic responses, but whose `/_next/static/*` path is safe and worth caching). An origin can now repeat another origin's `domain_name`/`function_name` under a distinct `origin_id` (each still gets its own `aws_lambda_permission` grant, keyed by `origin_id`) and set its own `cache_policy_id` etc., which wins over the module-level default for that origin's `ordered_cache_behavior` only. All three default to `null` (falls back to the module-level var), so existing consumers are unaffected. Surfaced by a real consumer (`latb-fe`'s `web_distribution`) needing `/_next/static/*` cached with `Managed-CachingOptimized` while the default behavior stayed on `Managed-CachingDisabled` — the module had no way to express "same origin, second path, different cache policy" before this.
+
 ## [1.8.0] - 2026-08-19
 
 ### Added

@@ -82,3 +82,21 @@ variable "invoke_mode" {
     error_message = "invoke_mode must be BUFFERED or RESPONSE_STREAM."
   }
 }
+
+variable "publish" {
+  type        = bool
+  description = "Publish a new immutable Lambda version on every apply that changes the function. Defaults to false, matching this module's original behavior (only $LATEST exists, no version history). Set true to enable alias-based rollback: each apply gets its own version number, and alias_name is repointed at the new one."
+  default     = false
+}
+
+variable "alias_name" {
+  type        = string
+  description = "Name of the alias this module creates to track the version published on each apply. Only created when publish is true — it has nothing to point at otherwise."
+  default     = "live"
+}
+
+variable "qualifier" {
+  type        = string
+  description = "Qualifier (alias name or version number) the Function URL invokes. null (the default) invokes $LATEST, matching this module's original behavior. Set to alias_name's value once publish is true to make the Function URL follow the alias instead of always tracking the newest code — that's what makes an alias repoint (without an apply) actually change what's served. Enforced via a resource precondition in main.tf rather than a variable validation block, since checking it against var.publish needs a cross-variable reference (Terraform >= 1.9) and this module's required_version floor is 1.7."
+  default     = null
+}

@@ -43,6 +43,7 @@ resource "aws_lambda_function" "primary" {
   timeout          = var.timeout
   memory_size      = var.memory_size
   layers           = var.layers
+  publish          = var.publish
   tags             = var.tags
 
   dynamic "environment" {
@@ -53,11 +54,29 @@ resource "aws_lambda_function" "primary" {
   }
 }
 
+# Only created when publish is true — with publish false there's no version
+# beyond $LATEST for an alias to point at.
+resource "aws_lambda_alias" "primary" {
+  count = var.publish ? 1 : 0
+
+  name             = var.alias_name
+  function_name    = aws_lambda_function.primary.function_name
+  function_version = aws_lambda_function.primary.version
+}
+
 # AC-3: Compute endpoints must not be anonymously invokable. AWS_IAM is
 # hardcoded — there is no variable to opt into NONE/public. Front this with
 # CloudFront Origin Access Control if the function needs to be internet-reachable.
 resource "aws_lambda_function_url" "primary" {
   function_name      = aws_lambda_function.primary.function_name
+  qualifier          = var.qualifier
   authorization_type = "AWS_IAM"
   invoke_mode        = var.invoke_mode
+
+  lifecycle {
+    precondition {
+      condition     = var.qualifier == null || var.publish
+      error_message = "qualifier can only be set when publish is true — there is no alias or version to target otherwise ($LATEST is the only qualifier available, and that's already the default)."
+    }
+  }
 }

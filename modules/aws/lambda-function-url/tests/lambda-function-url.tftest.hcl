@@ -151,3 +151,88 @@ run "rejects_invalid_invoke_mode" {
 
   expect_failures = [var.invoke_mode]
 }
+
+run "no_publish_by_default" {
+  command = plan
+
+  assert {
+    condition     = aws_lambda_function.primary.publish == false
+    error_message = "publish should default to false"
+  }
+
+  assert {
+    condition     = length(aws_lambda_alias.primary) == 0
+    error_message = "no alias should be created when publish is false"
+  }
+}
+
+run "alias_created_when_publish_requested" {
+  command = plan
+
+  variables {
+    publish = true
+  }
+
+  assert {
+    condition     = aws_lambda_function.primary.publish == true
+    error_message = "publish should be true when requested"
+  }
+
+  assert {
+    condition     = length(aws_lambda_alias.primary) == 1
+    error_message = "an alias should be created when publish is true"
+  }
+
+  assert {
+    condition     = aws_lambda_alias.primary[0].name == "live"
+    error_message = "alias_name should default to \"live\""
+  }
+}
+
+run "alias_name_is_configurable" {
+  command = plan
+
+  variables {
+    publish    = true
+    alias_name = "stable"
+  }
+
+  assert {
+    condition     = aws_lambda_alias.primary[0].name == "stable"
+    error_message = "alias should use the requested alias_name"
+  }
+}
+
+run "function_url_targets_latest_by_default" {
+  command = plan
+
+  assert {
+    condition     = aws_lambda_function_url.primary.qualifier == null
+    error_message = "qualifier should be null ($LATEST) by default"
+  }
+}
+
+run "function_url_targets_qualifier_when_set" {
+  command = plan
+
+  variables {
+    publish   = true
+    qualifier = "live"
+  }
+
+  assert {
+    condition     = aws_lambda_function_url.primary.qualifier == "live"
+    error_message = "qualifier should be passed through to the Function URL when set"
+  }
+}
+
+run "rejects_qualifier_without_publish" {
+  command = plan
+
+  variables {
+    publish   = false
+    qualifier = "live"
+  }
+
+  expect_failures = [aws_lambda_function_url.primary]
+}

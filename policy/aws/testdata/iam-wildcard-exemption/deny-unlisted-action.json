@@ -1,0 +1,13 @@
+{
+  "resource_changes": [
+    {
+      "address": "aws_iam_policy.ci_permissions",
+      "type": "aws_iam_policy",
+      "change": {
+        "after": {
+          "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"kms:Decrypt\"],\"Resource\":\"*\"}]}"
+        }
+      }
+    }
+  ]
+}

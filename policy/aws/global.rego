@@ -128,6 +128,37 @@ deny contains msg if {
   )
 }
 
+# A closed set of AWS actions that have no resource-level permission support at all:
+# IAM evaluates them against "*" no matter what ARN the policy names, so scoping them
+# does not restrict anything — it only makes the grant silently fail. Terraform cannot
+# refresh the corresponding resources without them (confirmed live against a real
+# `terraform plan`: an ARN-scoped grant of these produced AccessDeniedException naming
+# `on resource: *`).
+#
+# This is deliberately a small allowlist of specific actions, not a category or a
+# prefix pattern: every entry is a read/describe call AWS documents as not supporting
+# resource-level permissions. Adding to it is a policy decision — confirm the action
+# genuinely has no resource-level support (an ARN-scoped grant fails with
+# `on resource: *`) rather than assuming it, since a wrongly-added entry silently
+# widens every project's blast radius.
+no_resource_level_support := {
+  "cognito-idp:DescribeUserPoolDomain",
+  "kms:ListAliases",
+  "ses:GetIdentityDkimAttributes",
+  "ses:GetIdentityVerificationAttributes",
+}
+
+# True only when *every* action in the statement is exempt — a statement that mixes an
+# exempt action with a normal one is still denied, so this can't be used to smuggle a
+# resource-scopable action onto a wildcard resource.
+all_actions_exempt(action) if {
+  actions := as_array(action)
+  count(actions) > 0
+  every a in actions {
+    a in no_resource_level_support
+  }
+}
+
 deny contains msg if {
   pol := input.resource_changes[_]
   pol.type in {"aws_iam_policy", "aws_iam_role_policy"}
@@ -135,6 +166,7 @@ deny contains msg if {
   some stmt in as_array(doc.Statement)
   stmt.Effect == "Allow"
   has_wildcard(stmt.Resource)
+  not all_actions_exempt(stmt.Action)
 
   msg := sprintf(
     "IAM policy '%s' grants access to a wildcard (*) resource. IAM permissions must not use wildcard actions or resources.",

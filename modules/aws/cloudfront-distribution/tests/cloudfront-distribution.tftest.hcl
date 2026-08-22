@@ -389,3 +389,76 @@ run "rejects_cache_policy_id_with_forwarded_values" {
 
   expect_failures = [check.cache_policy_excludes_forwarded_values]
 }
+
+run "lambda_permission_qualifier_defaults_to_unqualified" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+      },
+    ]
+    default_origin_id = "lambda-origin"
+  }
+
+  assert {
+    condition     = values(aws_lambda_permission.primary)[0].qualifier == null
+    error_message = "qualifier should default to null (unqualified/$LATEST grant), matching this module's original behavior"
+  }
+
+  assert {
+    condition     = values(aws_lambda_permission.primary_invoke_function)[0].qualifier == null
+    error_message = "the InvokeFunction permission's qualifier should also default to null"
+  }
+}
+
+run "lambda_permission_qualifier_reaches_both_permission_resources" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+        qualifier     = "live"
+      },
+    ]
+    default_origin_id = "lambda-origin"
+  }
+
+  assert {
+    condition     = values(aws_lambda_permission.primary)[0].qualifier == "live"
+    error_message = "qualifier should be passed through to the InvokeFunctionUrl permission"
+  }
+
+  assert {
+    condition     = values(aws_lambda_permission.primary_invoke_function)[0].qualifier == "live"
+    error_message = "qualifier should be passed through to the InvokeFunction permission too"
+  }
+}
+
+run "rejects_qualifier_on_s3_origin" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id   = "s3-origin"
+        origin_type = "s3"
+        domain_name = "bucket.s3.amazonaws.com"
+        bucket_id   = "my-bucket"
+        bucket_arn  = "arn:aws:s3:::my-bucket"
+        qualifier   = "live"
+      },
+    ]
+    default_origin_id = "s3-origin"
+  }
+
+  expect_failures = [var.origins]
+}

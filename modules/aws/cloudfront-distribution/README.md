@@ -26,6 +26,7 @@ module "site" {
       origin_type   = "lambda"
       domain_name   = replace(replace(module.webhook_handler.function_url, "https://", ""), "/", "")
       function_name = module.webhook_handler.function_name
+      qualifier     = module.webhook_handler.alias_arn != null ? "live" : null # only set alongside a Function URL that itself targets an alias/version
       path_pattern  = "/api/*"
     },
   ]
@@ -40,7 +41,7 @@ module "site" {
 
 | Name | Description | Type | Default |
 |---|---|---|---|
-| `origins` | Origins to attach. Exactly one must have `origin_id == default_origin_id`; every other origin needs `path_pattern` to be routable. Each entry: `origin_id`, `origin_type` (`s3` or `lambda`), `domain_name`, plus `bucket_id`/`bucket_arn` (s3) or `function_name` (lambda), plus optional per-origin `cache_policy_id`/`origin_request_policy_id`/`response_headers_policy_id` (ordered cache behaviors only — override the module-level vars of the same name for that one origin's behavior; fall back to them when unset). An origin may repeat another origin's `domain_name`/`function_name` under a distinct `origin_id` to give one more `path_pattern` on the same underlying origin its own cache policy without a second module instance | `list(object(...))` | — (required) |
+| `origins` | Origins to attach. Exactly one must have `origin_id == default_origin_id`; every other origin needs `path_pattern` to be routable. Each entry: `origin_id`, `origin_type` (`s3` or `lambda`), `domain_name`, plus `bucket_id`/`bucket_arn` (s3) or `function_name` (lambda), plus optional per-origin `cache_policy_id`/`origin_request_policy_id`/`response_headers_policy_id` (ordered cache behaviors only — override the module-level vars of the same name for that one origin's behavior; fall back to them when unset) and `qualifier` (lambda only — alias name or version the CloudFront-invoke permission is scoped to; `null` grants on the unqualified ARN/`$LATEST`, matching this module's original behavior; set it to whatever qualifier the origin's Function URL itself targets, e.g. `lambda-function-url`'s own `qualifier` variable, or CloudFront gets a 403 invoking an alias the permission doesn't cover). An origin may repeat another origin's `domain_name`/`function_name` under a distinct `origin_id` to give one more `path_pattern` on the same underlying origin its own cache policy without a second module instance | `list(object(...))` | — (required) |
 | `default_origin_id` | `origin_id` used by the default cache behavior | `string` | — (required) |
 | `web_acl_arn` | ARN of the WAFv2 web ACL (scope `CLOUDFRONT`) to attach | `string` | — (required) |
 | `default_root_object` | Object returned for requests to the root URL | `string` | `"index.html"` |

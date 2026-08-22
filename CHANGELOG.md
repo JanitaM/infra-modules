@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-08-22
+
+### Added
+
+- `qualifier` on `modules/aws/cloudfront-distribution`'s per-origin `origins` entries (lambda origins only), threaded through both `aws_lambda_permission` resources (`InvokeFunctionUrl` and `InvokeFunction`). The module previously granted CloudFront invoke access only on a Lambda origin's unqualified ARN — no way to scope the grant to an alias or version. When a Lambda origin's Function URL targets an alias (via `lambda-function-url`'s own `qualifier`, added in `1.12.0`), CloudFront's origin invokes the alias-qualified ARN, but the unqualified grant doesn't cover it, so AWS_IAM authorization rejects every request with a 403 `AccessDeniedException` straight from the Function URL. `null` (the default) preserves an unqualified grant exactly as before, so existing consumers are unaffected. A new `origins` validation rejects `qualifier` set on a non-`lambda` origin. Surfaced by a real consumer (`latb-fe`): the `1.12.0` apply that put `web_lambda`/`admin_lambda` behind a `live` alias broke production on all three public hostnames within minutes — `aws lambda get-policy --qualifier live` returned `ResourceNotFoundException`, confirming no permission existed for that qualifier at all, while the unqualified policy (`$LATEST` only) was present and unchanged. That incident was patched with standalone, hand-written `aws_lambda_permission` resources in the consumer's own Terraform as a same-day stopgap; this closes the gap in the module itself so a future qualifier-based Lambda origin needs no consumer-side workaround.
+
 ## [1.12.0] - 2026-08-22
 
 ### Added

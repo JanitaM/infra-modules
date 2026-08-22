@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-08-22
+
+### Added
+
+- `publish`, `alias_name`, and `qualifier` on `modules/aws/lambda-function-url`, plus `published_version`/`alias_arn` outputs. The module previously had no way to get a versioned deploy or a stable alias for rollback — every apply only ever updated `$LATEST`, and the Function URL always targeted it with no qualifier input. `publish` (default `false`) opts a function into cutting an immutable version on every apply; `alias_name` (default `"live"`) names the alias created to track it; `qualifier`, only settable when `publish` is `true` (enforced via a resource precondition rather than a variable `validation` block, since cross-variable validation needs Terraform >= 1.9 and this module floors at 1.7), points the Function URL at that alias instead of `$LATEST`. All three default to values that preserve existing behavior, so existing consumers are unaffected. Surfaced by a real consumer (`latb-fe`): `project-overview.md`'s Rollback section had described alias-based rollback as if it were built, and it never was — `list-aliases` returned `[]` and `list-versions-by-function` returned only `$LATEST` against the real deployed functions. Rollback today means reverting a commit and re-running the whole CI/CD pipeline (minutes, always rebuilds); with this, it becomes repointing an alias (seconds, no rebuild).
+
 ## [1.11.0] - 2026-08-22
 
 ### Added

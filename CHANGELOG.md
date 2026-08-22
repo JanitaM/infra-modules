@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- New module `modules/aws/cloudtrail-trail`: a CloudTrail trail plus the S3 bucket it logs to, composed on top of this repo's own `s3-bucket` module and wired with a bucket policy scoped to that specific trail's ARN (`SourceArn` condition on every statement). Log file validation is always on, with no opt-out. Defaults to a multi-region trail covering global service events, with management-events-only logging (data events are billed per event and are opt-in via `event_selector`). Surfaced by a real consumer (`latb-fe`): the account had **no CloudTrail trail at all** (`describe-trails` returned `[]`), discovered mid-way through that project's CI role IAM tightening, where a throwaway trail was stood up for IAM Access Analyzer's policy generation and torn down again afterward rather than left as untracked infra. New `policy/aws/modules/cloudtrail-trail.rego` denies a plan where a trail's `enable_log_file_validation` isn't `true`, and a new "Account activity must be auditable" row was added to `project-overview.md`'s Security baseline intents table.
+
 ## [1.10.0] - 2026-08-22
 
 ### Changed

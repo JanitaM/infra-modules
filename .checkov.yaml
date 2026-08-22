@@ -44,3 +44,7 @@ skip-check:
 
   # aws_route53_zone.primary (modules/aws/route53)
   - CKV2_AWS_39 # DNS query logging — accepted gap, adds a log-group/resolver-config dependency beyond this module's scope.
+
+  # aws_cloudtrail.primary (modules/aws/cloudtrail-trail)
+  - CKV_AWS_252 # SNS topic on log delivery — accepted gap, explicitly out of scope for this module's first version (see context/features/cloudtrail-trail-module.md's Out of scope); a natural follow-on once a trail exists to notify from.
+  - CKV2_AWS_10 # CloudWatch Logs integration — same reasoning; alerting on trail events is a follow-on to standing up the trail itself, not a prerequisite.

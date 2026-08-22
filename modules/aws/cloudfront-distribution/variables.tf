@@ -6,6 +6,7 @@ variable "origins" {
     bucket_id                  = optional(string) # required when origin_type == "s3"
     bucket_arn                 = optional(string) # required when origin_type == "s3"
     function_name              = optional(string) # required when origin_type == "lambda"
+    qualifier                  = optional(string) # lambda origins only — alias name or version the CloudFront-invoke permission is scoped to. null grants on the unqualified ARN ($LATEST), matching this module's original behavior. Set this to match whatever qualifier the origin's Function URL itself targets (e.g. lambda-function-url's own qualifier variable) — CloudFront's origin invokes whatever ARN the Function URL is bound to, and the permission grant must match that exact ARN or every request gets a 403 AccessDeniedException.
     path_pattern               = optional(string) # required unless origin_id == var.default_origin_id
     cache_policy_id            = optional(string) # ordered_cache_behavior only — overrides var.cache_policy_id for this origin's behavior. Same origin, different path_pattern, different cache policy (e.g. a static-asset path on the same Lambda origin as the default behavior) is exactly what this is for.
     origin_request_policy_id   = optional(string) # ordered_cache_behavior only — overrides var.origin_request_policy_id for this origin's behavior
@@ -16,6 +17,11 @@ variable "origins" {
   validation {
     condition     = alltrue([for o in var.origins : contains(["s3", "lambda"], o.origin_type)])
     error_message = "every origin's origin_type must be s3 or lambda."
+  }
+
+  validation {
+    condition     = alltrue([for o in var.origins : o.qualifier == null || o.origin_type == "lambda"])
+    error_message = "qualifier can only be set on lambda origins — an s3 origin has no Lambda ARN for it to scope a permission against."
   }
 }
 

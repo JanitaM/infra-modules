@@ -184,6 +184,7 @@ resource "aws_lambda_permission" "primary" {
   statement_id           = "AllowCloudFrontInvokeFunctionUrl-${each.key}"
   action                 = "lambda:InvokeFunctionUrl"
   function_name          = each.value.function_name
+  qualifier              = each.value.qualifier
   principal              = "cloudfront.amazonaws.com"
   source_arn             = aws_cloudfront_distribution.primary.arn
   function_url_auth_type = "AWS_IAM"
@@ -200,6 +201,7 @@ resource "aws_lambda_permission" "primary_invoke_function" {
   statement_id  = "AllowCloudFrontInvokeFunction-${each.key}"
   action        = "lambda:InvokeFunction"
   function_name = each.value.function_name
+  qualifier     = each.value.qualifier
   principal     = "cloudfront.amazonaws.com"
   source_arn    = aws_cloudfront_distribution.primary.arn
 }

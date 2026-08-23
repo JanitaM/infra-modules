@@ -113,6 +113,12 @@ variable "response_headers_policy_id" {
   default     = null
 }
 
+variable "lambda_edge_origin_request_arn" {
+  type        = string
+  description = "Qualified ARN (including a specific published version — CloudFront rejects $LATEST for Lambda@Edge) of a Lambda@Edge function to associate with the origin-request event on every lambda-type origin's cache behavior (default and ordered alike), with include_body = true. Not attached to s3-type origins' behaviors. Leave null to attach none, matching this module's original behavior."
+  default     = null
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags applied to the distribution."

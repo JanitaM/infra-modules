@@ -5,6 +5,12 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-08-23
+
+### Added
+
+- `lambda_edge_origin_request_arn` on `modules/aws/cloudfront-distribution`, attaching a caller-supplied Lambda@Edge function to the `origin-request` event (`include_body = true`) on every lambda-type origin's cache behavior, default and ordered alike. CloudFront's OAC signs a lambda origin's request with SigV4 but never computes the body's payload hash itself — AWS's own docs push that onto whichever caller issues the request, via an `x-amz-content-sha256` header, and Lambda's `AWS_IAM` auth rejects an unsigned payload outright. That's a real option only when the caller is code you author (a hand-written `fetch` can set a header); it has no answer for a caller whose request-issuing runtime you don't control. Attaching the hash computation at `origin-request` instead — which runs before CloudFront's OAC signs the request onward — covers every caller uniformly, with `AWS_IAM`/`signing_behavior = "always"` on the origin left completely untouched. Defaults to `null` (no association), so existing consumers are unaffected. Not attached to s3-type origins' behaviors, which never carry a body upstream. Surfaced by a real consumer (`latb-fe`): every POST with a body 403'd in production (SigV4 mismatch) on both its web and admin CloudFront distributions, and the admin app's Next.js Server Actions have no supported hook for adding a request header, ruling out the client-side-hash workaround for that origin — the docs also name dropping `AWS_IAM` auth entirely as the other alternative, rejected as a real security-posture reduction, not a viable option. `context/fixes/cloudfront-oac-blocks-post-requests.md`.
+
 ## [1.14.0] - 2026-08-23
 
 ### Added

@@ -40,6 +40,12 @@ resource "aws_cloudfront_origin_access_control" "primary" {
   signing_protocol                  = "sigv4"
 }
 
+locals {
+  # Keyed lookup so the default cache behavior can tell whether its own origin is
+  # lambda-type, without iterating var.origins again inline.
+  origins_by_id = { for o in var.origins : o.origin_id => o }
+}
+
 resource "aws_cloudfront_distribution" "primary" {
   enabled             = true
   default_root_object = var.default_root_object
@@ -101,6 +107,19 @@ resource "aws_cloudfront_distribution" "primary" {
     origin_request_policy_id   = var.origin_request_policy_id
     response_headers_policy_id = var.response_headers_policy_id
 
+    # CloudFront doesn't compute a request body's payload hash before OAC signs a lambda-type
+    # origin's request, and Lambda's AWS_IAM auth rejects an unsigned payload — this lets a
+    # Lambda@Edge function inject x-amz-content-sha256 before that signing happens. Only
+    # meaningful for a lambda origin; an s3 origin's behavior never sends a body upstream.
+    dynamic "lambda_function_association" {
+      for_each = var.lambda_edge_origin_request_arn != null && local.origins_by_id[var.default_origin_id].origin_type == "lambda" ? [1] : []
+      content {
+        event_type   = "origin-request"
+        lambda_arn   = var.lambda_edge_origin_request_arn
+        include_body = true
+      }
+    }
+
     # SC-8: no opt-out for plaintext HTTP to the viewer.
     viewer_protocol_policy = "redirect-to-https"
   }
@@ -130,6 +149,16 @@ resource "aws_cloudfront_distribution" "primary" {
       cache_policy_id            = ordered_cache_behavior.value.cache_policy_id != null ? ordered_cache_behavior.value.cache_policy_id : var.cache_policy_id
       origin_request_policy_id   = ordered_cache_behavior.value.origin_request_policy_id != null ? ordered_cache_behavior.value.origin_request_policy_id : var.origin_request_policy_id
       response_headers_policy_id = ordered_cache_behavior.value.response_headers_policy_id != null ? ordered_cache_behavior.value.response_headers_policy_id : var.response_headers_policy_id
+
+      # See the matching block on default_cache_behavior above for why.
+      dynamic "lambda_function_association" {
+        for_each = var.lambda_edge_origin_request_arn != null && ordered_cache_behavior.value.origin_type == "lambda" ? [1] : []
+        content {
+          event_type   = "origin-request"
+          lambda_arn   = var.lambda_edge_origin_request_arn
+          include_body = true
+        }
+      }
 
       # SC-8: no opt-out for plaintext HTTP to the viewer.
       viewer_protocol_policy = "redirect-to-https"

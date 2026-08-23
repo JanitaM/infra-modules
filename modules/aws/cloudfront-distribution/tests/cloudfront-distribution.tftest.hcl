@@ -443,6 +443,116 @@ run "lambda_permission_qualifier_reaches_both_permission_resources" {
   }
 }
 
+run "no_lambda_edge_association_by_default" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+      },
+    ]
+    default_origin_id = "lambda-origin"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].lambda_function_association) == 0
+    error_message = "no lambda_function_association should be attached when lambda_edge_origin_request_arn is unset, matching this module's original behavior"
+  }
+}
+
+run "lambda_edge_origin_request_arn_attaches_to_default_behavior_of_lambda_origin" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+      },
+    ]
+    default_origin_id              = "lambda-origin"
+    lambda_edge_origin_request_arn = "arn:aws:lambda:us-east-1:123456789012:function:content-hash:3"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].lambda_function_association) == 1
+    error_message = "a lambda_function_association should be attached to the default cache behavior of a lambda-type origin"
+  }
+
+  assert {
+    condition     = tolist(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].lambda_function_association)[0].event_type == "origin-request"
+    error_message = "event_type should be origin-request"
+  }
+
+  assert {
+    condition     = tolist(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].lambda_function_association)[0].lambda_arn == "arn:aws:lambda:us-east-1:123456789012:function:content-hash:3"
+    error_message = "lambda_arn should match var.lambda_edge_origin_request_arn"
+  }
+
+  assert {
+    condition     = tolist(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].lambda_function_association)[0].include_body == true
+    error_message = "include_body should always be true — the function needs the body to hash it"
+  }
+}
+
+run "lambda_edge_origin_request_arn_skips_s3_origin_behavior" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id   = "s3-origin"
+        origin_type = "s3"
+        domain_name = "bucket.s3.amazonaws.com"
+        bucket_id   = "my-bucket"
+        bucket_arn  = "arn:aws:s3:::my-bucket"
+      },
+    ]
+    default_origin_id              = "s3-origin"
+    lambda_edge_origin_request_arn = "arn:aws:lambda:us-east-1:123456789012:function:content-hash:3"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].lambda_function_association) == 0
+    error_message = "an s3-type origin's default cache behavior should not get a lambda_function_association even when lambda_edge_origin_request_arn is set"
+  }
+}
+
+run "lambda_edge_origin_request_arn_attaches_to_ordered_behavior_of_lambda_origin_only" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id   = "s3-origin"
+        origin_type = "s3"
+        domain_name = "bucket.s3.amazonaws.com"
+        bucket_id   = "my-bucket"
+        bucket_arn  = "arn:aws:s3:::my-bucket"
+      },
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+        path_pattern  = "/api/*"
+      },
+    ]
+    lambda_edge_origin_request_arn = "arn:aws:lambda:us-east-1:123456789012:function:content-hash:3"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].lambda_function_association) == 1
+    error_message = "the lambda origin's ordered cache behavior should get the lambda_function_association"
+  }
+}
+
 run "rejects_qualifier_on_s3_origin" {
   command = plan
 

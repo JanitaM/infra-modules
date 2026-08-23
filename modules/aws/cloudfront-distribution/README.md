@@ -55,6 +55,7 @@ module "site" {
 | `cache_policy_id` | ID of an `aws_cloudfront_cache_policy` to attach to every cache behavior, replacing `forwarded_values` (and its implicit legacy TTLs) entirely. Mutually exclusive with `forwarded_headers`/`forwarded_query_string_keys`/`forwarded_cookie_names`. This module doesn't author the policy itself | `string` | `null` |
 | `origin_request_policy_id` | ID of an `aws_cloudfront_origin_request_policy` to attach to every cache behavior. Only meaningful alongside `cache_policy_id` | `string` | `null` |
 | `response_headers_policy_id` | ID of an `aws_cloudfront_response_headers_policy` to attach to every cache behavior (e.g. for CSP/HSTS). This module doesn't author the policy itself — header content is project-specific | `string` | `null` |
+| `lambda_edge_origin_request_arn` | Qualified ARN (including a published version — CloudFront rejects `$LATEST` for Lambda@Edge) of a Lambda@Edge function to associate with the `origin-request` event, `include_body = true`, on every lambda-type origin's cache behavior (default and ordered alike). Not attached to s3-type origins' behaviors | `string` | `null` |
 | `tags` | Tags applied to the distribution | `map(string)` | `{}` |
 
 ### Cache-forwarding on the default behavior
@@ -89,6 +90,30 @@ origin_request_policy_id = aws_cloudfront_origin_request_policy.example.id
 
 Some CloudFront pricing-plan tiers require moving off the legacy `forwarded_values`/implicit-TTL
 behavior entirely — this is how to do that without hand-rolling the distribution.
+
+### Lambda@Edge on `origin-request`, for OAC-signed lambda origins
+
+CloudFront's OAC signs a lambda-type origin's request with SigV4, but never computes the
+request body's payload hash itself — [AWS documents this as by
+design](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-lambda.html),
+pushing the `x-amz-content-sha256` header onto whoever issues the request. That's workable for
+a caller you author yourself (a `fetch` call can set the header), and not workable for a caller
+you don't control the internals of (e.g. a framework's own request-issuing runtime).
+`lambda_edge_origin_request_arn` attaches a Lambda@Edge function to `origin-request` — which
+runs *before* CloudFront's OAC signs the request to the origin — so it can compute
+`x-amz-content-sha256` from the body and set the header for every caller uniformly, without
+weakening `AWS_IAM` auth or OAC's `signing_behavior = "always"` on the origin itself. This
+module doesn't author the Lambda@Edge function — create it (published in `us-east-1`, since
+Lambda@Edge requires that region) and pass its qualified ARN in:
+
+```hcl
+lambda_edge_origin_request_arn = aws_lambda_function.content_hash_signer.qualified_arn
+```
+
+Lambda@Edge's `origin-request`/`origin-response` triggers cap request-body access at ~1MB when
+`include_body` is enabled (always on here); a body larger than that arrives truncated to the
+function. Confirm actual payload sizes for your origin's POST/PUT/PATCH traffic before relying
+on this for a body that could exceed it.
 
 ## Outputs
 

@@ -85,7 +85,25 @@ variable "alert_email" {
 
 variable "kms_key_id" {
   type        = string
-  description = "KMS key ID or ARN to encrypt the SNS alert topic with. Defaults to the AWS-managed alias/aws/sns key when null."
+  description = "KMS key ID or ARN to encrypt the SNS alert topic with. Defaults to the AWS-managed alias/aws/sns key when null. Ignored when existing_topic_arn is set, since no topic is created."
+  default     = null
+}
+
+variable "existing_topic_arn" {
+  type        = string
+  description = "Alert topic to notify instead of creating one, e.g. the topic_arn output of another instance of this module. Lets several alarms share one topic (and one email confirmation). Leave null to create a dedicated topic."
+  default     = null
+}
+
+variable "log_group_name" {
+  type        = string
+  description = "CloudWatch log group to publish a metric from, turning this into a log-based alarm. The metric is published under this module's own namespace/metric_name. Must be set together with log_filter_pattern. Leave null to alarm on an existing metric."
+  default     = null
+}
+
+variable "log_filter_pattern" {
+  type        = string
+  description = "CloudWatch Logs filter pattern selecting the lines to count, e.g. \"\\\"Failed to send email\\\"\". Must be set together with log_group_name."
   default     = null
 }
 

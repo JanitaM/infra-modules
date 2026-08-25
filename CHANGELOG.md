@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `.github/workflows/ci.yml`'s `on:` block now includes `workflow_dispatch:`, so CI can be re-run on demand against `main`'s current HEAD, independent of whether a `push`/`pull_request` event fired. Previously the only triggers were `push` to `main` and `pull_request`, so a commit that reached `main` without a push event (e.g. a fast-forward merge outside a PR) got no CI run and had no way to get one after the fact. Surfaced while cutting `latb-fe`'s `infra-modules` `v1.14.0`: `main`'s HEAD had no check-runs of its own, and the tag was justified only by its tree being byte-identical to a PR head that had passed, not by a run against `main` itself. `context/fixes/infra-modules-ci-workflow-dispatch.md`.
+
 ## [1.17.0] - 2026-08-25
 
 ### Fixed

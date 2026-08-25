@@ -14,3 +14,15 @@ variable "tags" {
   description = "Tags applied to the bucket."
   default     = {}
 }
+
+variable "cors_rules" {
+  type = list(object({
+    allowed_origins = list(string)
+    allowed_methods = list(string)
+    allowed_headers = list(string)
+    expose_headers  = optional(list(string), [])
+    max_age_seconds = optional(number)
+  }))
+  description = "CORS rules for the bucket. Empty (the default) creates no CORS configuration, so the bucket rejects every cross-origin browser request."
+  default     = []
+}

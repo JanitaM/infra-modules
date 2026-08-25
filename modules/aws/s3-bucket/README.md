@@ -17,6 +17,23 @@ module "images_bucket" {
 }
 ```
 
+A bucket that a browser uploads to directly (e.g. via a presigned PUT) needs `cors_rules`,
+since a browser's cross-origin preflight has nothing to pass against a bucket with no CORS
+configuration:
+
+```hcl
+module "images_bucket" {
+  source      = "github.com/JanitaM/infra-modules//modules/aws/s3-bucket?ref=v1.0.0"
+  bucket_name = "example-images"
+  cors_rules = [{
+    allowed_origins = ["https://app.example.com"]
+    allowed_methods = ["GET", "PUT"]
+    allowed_headers = ["*"]
+    expose_headers  = ["ETag"]
+  }]
+}
+```
+
 ## Inputs
 
 | Name | Description | Type | Default |
@@ -24,6 +41,7 @@ module "images_bucket" {
 | `bucket_name` | Globally unique bucket name | `string` | — (required) |
 | `versioning_enabled` | Enable object versioning | `bool` | `true` |
 | `tags` | Tags applied to the bucket | `map(string)` | `{}` |
+| `cors_rules` | CORS rules for the bucket. Empty (the default) creates no CORS configuration | `list(object({ allowed_origins, allowed_methods, allowed_headers, expose_headers, max_age_seconds }))` | `[]` |
 
 ## Outputs
 

@@ -5,6 +5,8 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-08-25
+
 ### Fixed
 
 - `modules/aws/ses`'s `feedback_notification_email`/`existing_topic_arn` (added `1.16.0`) created a bounce/complaint SNS topic encrypted with the AWS-managed `alias/aws/sns` key by default — non-functional, since AWS does not let a customer edit an AWS-managed key's policy, so there is no way to grant SES the `kms:GenerateDataKey`/`kms:Decrypt` it needs to publish into that topic. Every consumer following the module's own documented default (`feedback_notification_email` set, `kms_key_id` left unset) hit this. Confirmed live in a real consumer (`latb-fe`): `aws_ses_event_destination` failed with `InvalidSNSDestination: Access denied to KMS key ...` against `alias/aws/sns`, on every attempt. Now, when `kms_key_id` is left `null`, the module creates its own customer-managed KMS key (`enable_key_rotation = true`) with a policy granting the account root full access plus `ses.amazonaws.com` `kms:GenerateDataKey`/`kms:Decrypt`, scoped by an `AWS:SourceAccount` condition — the same shape as `1.16.0`'s SNS topic policy grant. A caller passing their own `kms_key_id` is unaffected; `existing_topic_arn` was already unaffected (the caller owns that topic's encryption). New `kms_key_arn` output, mirroring `topic_arn`. **Compatibility note**: a consumer who already applied `1.16.0`'s topic against `alias/aws/sns` will see its `kms_master_key_id` change to the new key on next apply — an in-place update, not a destroy/recreate, since `alias/aws/sns` never worked for this purpose in the first place. `context/fixes/ses-feedback-topic-aws-managed-key-blocks-ses-publish.md`.

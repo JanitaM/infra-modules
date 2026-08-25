@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `feedback_notification_email` and `existing_topic_arn` on `modules/aws/ses`, which add an `aws_ses_configuration_set` and an SNS `aws_ses_event_destination` (`matching_types = ["bounce", "complaint"]`) so a consumer finds out when a send bounces or triggers a spam complaint — previously the module created only the domain identity, DKIM signing, and the scoped send policy, with no way to observe delivery health at all. Follows `cloudwatch`'s `alert_email`/`existing_topic_arn` shape: a dedicated, KMS-encrypted `aws_sns_topic` is created and subscribed only when `feedback_notification_email` is set and no `existing_topic_arn` is given; passing `existing_topic_arn` reuses a topic instead (e.g. one already shared across alarms). Both default to `null`, so the configuration set, topic, and event destination are skipped entirely and existing consumers are unaffected. New `configuration_set_name` output feeds `SendEmailCommand`'s `ConfigurationSetName` — without passing that on every send, SES never associates the send with the configuration set and no bounce/complaint event fires regardless of what's configured here. New `topic_arn` output mirrors `cloudwatch`'s, for chaining another subscription onto the same topic. Also adds an `aws_sns_topic_policy` granting `ses.amazonaws.com` publish access on a module-created topic, scoped to the account via an `AWS:SourceAccount` condition — SES does not inherit publish permission the way CloudWatch alarm actions do, and omitting this would have events silently dropped with no error at apply or send time. The new configuration set sets `delivery_options { tls_policy = "Require" }`, rejecting a send that can't negotiate TLS to the recipient's MTA rather than falling back to plaintext. Surfaced by a real consumer (`latb-fe`): `lookatthesebirds.com` has production SES access and is sending real mail with no bounce/complaint monitoring, a real AWS account-suspension risk once a domain's rate goes unwatched. `context/features/ses-bounce-complaint-notifications.md`.
+
 ## [1.15.0] - 2026-08-23
 
 ### Added

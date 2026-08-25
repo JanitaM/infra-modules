@@ -8,12 +8,23 @@ resource "aws_ses_domain_dkim" "primary" {
   domain = aws_ses_domain_identity.primary.domain
 }
 
-# AC-6: sending permission scoped to this identity's ARN only, no wildcard
-# resource/action. See policy/aws/global.rego for the plan-time check.
+# AC-6: sending permission scoped to this identity's ARN (and, when a
+# configuration set exists, that ARN too) only, no wildcard resource/action.
+# See policy/aws/global.rego for the plan-time check.
+#
+# SES enforces resource-level IAM on the configuration set named in
+# SendEmailCommand's ConfigurationSetName, separately from the identity being
+# sent from — confirmed live: a send using this policy without the
+# configuration set's ARN included failed with AccessDenied on
+# ses:SendEmail against the configuration-set resource, despite the identity
+# ARN grant being present and correct.
 data "aws_iam_policy_document" "send" {
   statement {
-    actions   = ["ses:SendEmail", "ses:SendRawEmail"]
-    resources = [aws_ses_domain_identity.primary.arn]
+    actions = ["ses:SendEmail", "ses:SendRawEmail"]
+    resources = compact([
+      aws_ses_domain_identity.primary.arn,
+      local.create_config_set ? aws_ses_configuration_set.feedback[0].arn : null,
+    ])
   }
 }
 

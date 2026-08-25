@@ -9,6 +9,18 @@ variables {
 run "no_feedback_resources_by_default" {
   command = plan
 
+  # data.aws_iam_policy_document.send's resources assertion below needs the
+  # identity ARN known at plan time — mock_provider otherwise leaves it
+  # "(not yet known)", which the set it's read into can't evaluate length()
+  # on.
+  override_resource {
+    target          = aws_ses_domain_identity.primary
+    override_during = plan
+    values = {
+      arn = "arn:aws:ses:us-east-1:123456789012:identity/mail.example.com"
+    }
+  }
+
   assert {
     condition     = length(aws_ses_configuration_set.feedback) == 0
     error_message = "no aws_ses_configuration_set should be created when neither feedback input is set"
@@ -23,6 +35,11 @@ run "no_feedback_resources_by_default" {
     condition     = length(aws_ses_event_destination.feedback) == 0
     error_message = "no aws_ses_event_destination should be created when neither feedback input is set"
   }
+
+  assert {
+    condition     = length(data.aws_iam_policy_document.send.statement[0].resources) == 1
+    error_message = "the send policy should only reference the domain identity ARN when no configuration set exists"
+  }
 }
 
 run "feedback_notification_email_creates_full_chain" {
@@ -30,6 +47,24 @@ run "feedback_notification_email_creates_full_chain" {
 
   variables {
     feedback_notification_email = "ops@example.com"
+  }
+
+  # Same reason as "no_feedback_resources_by_default"'s override: the send
+  # policy's resources assertion needs both ARNs known at plan time.
+  override_resource {
+    target          = aws_ses_domain_identity.primary
+    override_during = plan
+    values = {
+      arn = "arn:aws:ses:us-east-1:123456789012:identity/mail.example.com"
+    }
+  }
+
+  override_resource {
+    target          = aws_ses_configuration_set.feedback[0]
+    override_during = plan
+    values = {
+      arn = "arn:aws:ses:us-east-1:123456789012:configuration-set/mail-example-com-feedback"
+    }
   }
 
   # aws_kms_key.feedback's policy argument validates it's real JSON even at
@@ -98,6 +133,11 @@ run "feedback_notification_email_creates_full_chain" {
   assert {
     condition     = length(aws_sns_topic_policy.feedback) == 1
     error_message = "a topic policy granting ses.amazonaws.com publish access should be created alongside a module-created topic"
+  }
+
+  assert {
+    condition     = length(data.aws_iam_policy_document.send.statement[0].resources) == 2
+    error_message = "the send policy should include the configuration set's ARN once one is created, or SendEmailCommand's ConfigurationSetName gets AccessDenied at send time"
   }
 }
 

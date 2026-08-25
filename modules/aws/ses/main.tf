@@ -50,15 +50,81 @@ resource "aws_ses_configuration_set" "feedback" {
   }
 }
 
+data "aws_caller_identity" "current" {
+  count = local.create_topic ? 1 : 0
+}
+
+locals {
+  # true only when this module owns the key decision at all: no caller-supplied
+  # key, and a topic to encrypt in the first place.
+  create_kms_key = local.create_topic && var.kms_key_id == null
+}
+
+# The AWS-managed alias/aws/sns key cannot grant SES publish access — its
+# policy isn't editable by a customer, at all, ever. A customer-managed key is
+# the only way for feedback_notification_email's default (no kms_key_id
+# supplied) to actually work, confirmed live: aws_ses_event_destination fails
+# with InvalidSNSDestination ("Access denied to KMS key ...") against
+# alias/aws/sns, on every attempt, regardless of what IAM/SNS policy exists.
+resource "aws_kms_key" "feedback" {
+  count               = local.create_kms_key ? 1 : 0
+  description         = "Encrypts the ${var.domain} SES bounce/complaint SNS topic."
+  enable_key_rotation = true
+  policy              = data.aws_iam_policy_document.feedback_kms[0].json
+  tags                = var.tags
+}
+
+resource "aws_kms_alias" "feedback" {
+  count         = local.create_kms_key ? 1 : 0
+  name          = "alias/${local.resource_name_prefix}-ses-feedback"
+  target_key_id = aws_kms_key.feedback[0].key_id
+}
+
+data "aws_iam_policy_document" "feedback_kms" {
+  count = local.create_kms_key ? 1 : 0
+
+  # Every CMK's policy needs this: without an explicit grant to the account
+  # root, IAM policies elsewhere in the account can never be used to permit
+  # this key, no matter what they say — only principals named directly in the
+  # key policy could use it at all.
+  statement {
+    sid     = "EnableRootAccountAccess"
+    effect  = "Allow"
+    actions = ["kms:*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current[0].account_id}:root"]
+    }
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid     = "AllowSESPublish"
+    effect  = "Allow"
+    actions = ["kms:GenerateDataKey", "kms:Decrypt"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ses.amazonaws.com"]
+    }
+
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceAccount"
+      values   = [data.aws_caller_identity.current[0].account_id]
+    }
+  }
+}
+
 resource "aws_sns_topic" "feedback" {
   count             = local.create_topic ? 1 : 0
   name              = "${local.resource_name_prefix}-ses-feedback"
-  kms_master_key_id = coalesce(var.kms_key_id, "alias/aws/sns")
+  kms_master_key_id = local.create_kms_key ? aws_kms_key.feedback[0].key_id : var.kms_key_id
   tags              = var.tags
-}
-
-data "aws_caller_identity" "current" {
-  count = local.create_topic ? 1 : 0
 }
 
 # SES doesn't inherit permission to publish just because the topic is in the

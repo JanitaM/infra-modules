@@ -32,6 +32,39 @@ run "feedback_notification_email_creates_full_chain" {
     feedback_notification_email = "ops@example.com"
   }
 
+  # aws_kms_key.feedback's policy argument validates it's real JSON even at
+  # plan time — data.aws_iam_policy_document's json output comes back invalid
+  # under mock_provider unless overridden explicitly (feedback_topic_publish's
+  # json feeds aws_sns_topic_policy instead, which doesn't validate
+  # client-side, so it doesn't need this).
+  override_data {
+    target = data.aws_iam_policy_document.feedback_kms[0]
+    values = {
+      json = "{}"
+    }
+  }
+
+  # aws_sns_topic.feedback's kms_master_key_id reads aws_kms_key.feedback's
+  # key_id, otherwise unknown until apply — a fixed key_id here is what makes
+  # the equality assertion below evaluable at plan time.
+  override_resource {
+    target          = aws_kms_key.feedback[0]
+    override_during = plan
+    values = {
+      key_id = "12345678-1234-1234-1234-123456789012"
+    }
+  }
+
+  assert {
+    condition     = length(aws_kms_key.feedback) == 1
+    error_message = "a customer-managed KMS key should be created when kms_key_id is unset"
+  }
+
+  assert {
+    condition     = aws_sns_topic.feedback[0].kms_master_key_id == aws_kms_key.feedback[0].key_id
+    error_message = "the topic should be encrypted with the module-created key"
+  }
+
   assert {
     condition     = length(aws_ses_configuration_set.feedback) == 1
     error_message = "an aws_ses_configuration_set should be created when feedback_notification_email is set"
@@ -98,5 +131,29 @@ run "existing_topic_arn_skips_own_topic" {
   assert {
     condition     = length(aws_sns_topic_subscription.feedback_email) == 0
     error_message = "no email subscription should be created when feedback_notification_email is not set"
+  }
+
+  assert {
+    condition     = length(aws_kms_key.feedback) == 0
+    error_message = "no KMS key should be created when existing_topic_arn is set (no topic to encrypt)"
+  }
+}
+
+run "caller_supplied_kms_key_id_skips_module_key" {
+  command = plan
+
+  variables {
+    feedback_notification_email = "ops@example.com"
+    kms_key_id                  = "arn:aws:kms:us-east-1:123456789012:key/caller-owned-key"
+  }
+
+  assert {
+    condition     = length(aws_kms_key.feedback) == 0
+    error_message = "no KMS key should be created when the caller supplies kms_key_id"
+  }
+
+  assert {
+    condition     = aws_sns_topic.feedback[0].kms_master_key_id == "arn:aws:kms:us-east-1:123456789012:key/caller-owned-key"
+    error_message = "the topic should be encrypted with the caller-supplied key"
   }
 }

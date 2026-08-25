@@ -23,6 +23,6 @@ variable "existing_topic_arn" {
 
 variable "kms_key_id" {
   type        = string
-  description = "KMS key ID or ARN to encrypt the bounce/complaint SNS topic with. Defaults to the AWS-managed alias/aws/sns key when null. Ignored when existing_topic_arn is set, since no topic is created."
+  description = "KMS key ID or ARN to encrypt the bounce/complaint SNS topic with. Leave null to have the module create its own customer-managed key with a policy granting SES publish access — the AWS-managed alias/aws/sns key cannot grant that access, since its policy isn't editable. Ignored when existing_topic_arn is set, since no topic is created."
   default     = null
 }

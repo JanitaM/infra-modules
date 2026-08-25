@@ -10,3 +10,8 @@ output "configuration_set_name" { value = one(aws_ses_configuration_set.feedback
 # created it or a caller passed one in via existing_topic_arn. null when
 # neither feedback input is set.
 output "topic_arn" { value = local.topic_arn }
+
+# The customer-managed KMS key this module created to encrypt its own feedback
+# topic. null whenever kms_key_id or existing_topic_arn was supplied (the
+# caller already owns that key/topic) or neither feedback input is set.
+output "kms_key_arn" { value = one(aws_kms_key.feedback[*].arn) }

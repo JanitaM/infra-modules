@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `policy/aws/global.rego`'s wildcard-action exemption allowlist now includes `ses:DescribeConfigurationSet`. Confirmed live in a real consumer (`latb-fe`): a `terraform plan` refreshing an `aws_ses_configuration_set` failed with `AccessDenied: ... not authorized to perform: ses:DescribeConfigurationSet`, despite an ARN-scoped `ses:*` grant covering it — the same no-resource-level-support class as this allowlist's existing `ses:GetIdentityDkimAttributes`/`ses:GetIdentityVerificationAttributes` entries. Left uncovered, any consumer with an SES configuration set can plan locally (real IAM users can have broader permissions) but never through this policy's intended CI role shape without hand-widening `ManageSes` to a real wildcard resource, which the same policy would then correctly reject. `context/fixes/images-bucket-cors.md` (the CORS fix this was discovered while deploying, unrelated to SES itself).
+
 ## [1.18.0] - 2026-08-25
 
 ### Added

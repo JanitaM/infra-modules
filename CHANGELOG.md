@@ -5,6 +5,10 @@ is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `cors_rules` on `modules/aws/s3-bucket`, adding an `aws_s3_bucket_cors_configuration` created only when the list is non-empty (`count = length(var.cors_rules) > 0 ? 1 : 0`, one `cors_rule` block per entry). The module previously had no way to configure CORS at all, so any bucket meant to receive a direct browser upload (e.g. a presigned PUT) rejected every cross-origin request at the preflight with no policy to pass. Defaults to `[]`, preserving current behavior (no CORS configuration resource) for existing consumers — the same "no opt-out by default, opt-in via variable" shape as this module's public-access stance. Surfaced by a real consumer (`latb-fe`): its admin app's presigned PUT to the `latb-fe-images` bucket from `admin.lookatthesebirds.com` failed client-side on every attempt, confirmed live via `aws s3api get-bucket-cors --bucket latb-fe-images` returning `NoSuchCORSConfiguration`. `context/fixes/images-bucket-cors.md`.
+
 ### Changed
 
 - `.github/workflows/ci.yml`'s `on:` block now includes `workflow_dispatch:`, so CI can be re-run on demand against `main`'s current HEAD, independent of whether a `push`/`pull_request` event fired. Previously the only triggers were `push` to `main` and `pull_request`, so a commit that reached `main` without a push event (e.g. a fast-forward merge outside a PR) got no CI run and had no way to get one after the fact. Surfaced while cutting `latb-fe`'s `infra-modules` `v1.14.0`: `main`'s HEAD had no check-runs of its own, and the tag was justified only by its tree being byte-identical to a PR head that had passed, not by a run against `main` itself. `context/fixes/infra-modules-ci-workflow-dispatch.md`.

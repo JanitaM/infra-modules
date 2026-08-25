@@ -144,6 +144,7 @@ deny contains msg if {
 no_resource_level_support := {
   "cognito-idp:DescribeUserPoolDomain",
   "kms:ListAliases",
+  "ses:DescribeConfigurationSet",
   "ses:GetIdentityDkimAttributes",
   "ses:GetIdentityVerificationAttributes",
 }

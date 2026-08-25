@@ -5,7 +5,7 @@
       "type": "aws_iam_policy",
       "change": {
         "after": {
-          "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"cognito-idp:DescribeUserPoolDomain\",\"kms:ListAliases\",\"ses:GetIdentityDkimAttributes\",\"ses:GetIdentityVerificationAttributes\"],\"Resource\":\"*\"}]}"
+          "policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"cognito-idp:DescribeUserPoolDomain\",\"kms:ListAliases\",\"ses:DescribeConfigurationSet\",\"ses:GetIdentityDkimAttributes\",\"ses:GetIdentityVerificationAttributes\"],\"Resource\":\"*\"}]}"
         }
       }
     }

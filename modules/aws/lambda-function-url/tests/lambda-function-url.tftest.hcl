@@ -45,6 +45,36 @@ run "additional_policies_attached_when_set" {
   }
 }
 
+run "handles_not_yet_known_additional_policy_arn" {
+  command = plan
+
+  module {
+    source = "./tests/fixtures/unknown-policy-arn"
+  }
+
+  providers = {
+    aws = aws
+  }
+
+  override_data {
+    target = module.under_test.data.aws_iam_policy_document.assume_role
+    values = {
+      json = "{}"
+    }
+  }
+
+  # The meaningful check is that this run's `plan` succeeds at all: before the
+  # index-keyed for_each fix, toset() over a list containing this not-yet-known
+  # value made Terraform unable to resolve for_each, and the plan itself failed
+  # with "Invalid for_each argument" — the whole run would report "fail" here,
+  # regardless of any assert. This assert just confirms the plan reached a
+  # normal, evaluable state once that no longer happens.
+  assert {
+    condition     = module.under_test.function_name == "test-function"
+    error_message = "module should plan successfully even when one additional_policy_arns entry is not yet known at plan time (e.g. a brand-new module's policy-ARN output before its first apply) — regression test for the toset()-on-unknown-values 'Invalid for_each argument' failure"
+  }
+}
+
 run "no_environment_block_by_default" {
   command = plan
 

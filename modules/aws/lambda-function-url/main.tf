@@ -27,8 +27,15 @@ resource "aws_iam_role_policy_attachment" "logs" {
 # read_policy_arn/send_policy_arn output of another module in this repo) —
 # this module never authors a policy document itself, so it can't introduce
 # a wildcard action/resource here.
+#
+# Keyed by index rather than toset(var.additional_policy_arns): the list's
+# length is always known at plan time, even when an entry is itself a
+# not-yet-applied module's output (e.g. a brand-new secrets-manager module's
+# read_policy_arn). toset() needs every value to determine set membership,
+# so a single unknown entry makes the whole for_each unresolvable ("Invalid
+# for_each argument") until that entry's module is applied first.
 resource "aws_iam_role_policy_attachment" "additional" {
-  for_each   = toset(var.additional_policy_arns)
+  for_each   = { for idx, arn in var.additional_policy_arns : tostring(idx) => arn }
   role       = aws_iam_role.primary.name
   policy_arn = each.value
 }

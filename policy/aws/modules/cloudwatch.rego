@@ -11,9 +11,20 @@ import rego.v1
 # someone writes by hand instead of through modules/aws/cloudwatch, which
 # always sets kms_master_key_id.
 
-sns_unencrypted(topic) if not topic.change.after.kms_master_key_id
+# A topic being destroyed has no `after` state — `not <undefined>` evaluates
+# to true in Rego, so without this guard a pure delete's null `after` would
+# make sns_unencrypted true for every topic being torn down, not just ones
+# that were actually unencrypted. See global.rego's being_destroyed for the
+# same shape of bug on aws_dynamodb_table.
+sns_unencrypted(topic) if {
+  not being_destroyed(topic)
+  not topic.change.after.kms_master_key_id
+}
 
-sns_unencrypted(topic) if topic.change.after.kms_master_key_id == null
+sns_unencrypted(topic) if {
+  not being_destroyed(topic)
+  topic.change.after.kms_master_key_id == null
+}
 
 # ---- Intent: alerting/notification topics must be encrypted at rest ----
 

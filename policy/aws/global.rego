@@ -76,9 +76,18 @@ dynamodb_sse_enabled(table) if {
   s.enabled == true
 }
 
+# A table being destroyed has no `after` state — a pure delete's `change.after`
+# is `null`, so there is nothing left to check compliance against, and
+# `table.change.after.server_side_encryption`/`.point_in_time_recovery` below
+# would otherwise make every deleted table look like a newly-noncompliant one.
+# A replace (delete-then-create) still has a real `after` and is checked
+# normally.
+being_destroyed(resource) if resource.change.after == null
+
 deny contains msg if {
   table := input.resource_changes[_]
   table.type == "aws_dynamodb_table"
+  not being_destroyed(table)
   not dynamodb_sse_enabled(table)
   msg := sprintf(
     "DynamoDB table '%s' does not have server-side encryption enabled. Encryption at rest is required.",
@@ -96,6 +105,7 @@ dynamodb_pitr_enabled(table) if {
 deny contains msg if {
   table := input.resource_changes[_]
   table.type == "aws_dynamodb_table"
+  not being_destroyed(table)
   not dynamodb_pitr_enabled(table)
   msg := sprintf(
     "DynamoDB table '%s' does not have point-in-time recovery enabled.",

@@ -12,8 +12,13 @@ resource "aws_iam_role" "this" {
   tags                 = var.tags
 }
 
+# Keyed by index rather than toset(var.policy_arns): the list's length is
+# always known at plan time, even when an entry is itself a not-yet-applied
+# module's output. toset() needs every value to determine set membership, so
+# a single unknown entry makes the whole for_each unresolvable ("Invalid
+# for_each argument") until that entry's module is applied first.
 resource "aws_iam_role_policy_attachment" "this" {
-  for_each   = toset(var.policy_arns)
+  for_each   = { for idx, arn in var.policy_arns : tostring(idx) => arn }
   role       = aws_iam_role.this.name
   policy_arn = each.value
 }

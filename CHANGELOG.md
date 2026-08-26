@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.21.0] - 2026-08-26
+
+### Fixed
+
+- `for_each` on `aws_iam_role_policy_attachment` in `modules/aws/lambda-function-url` (`additional_policy_arns`) and `modules/aws/iam-role` (`policy_arns`) now keys off a statically-derived index map (`{ for idx, arn in var.X : tostring(idx) => arn }`) instead of `toset(var.X)`. `toset()` needs every element's value to determine set membership, so a single not-yet-known entry — e.g. another module's policy-ARN output before that module's first apply — made the whole `for_each` unresolvable, failing `terraform plan` outright with "Invalid for_each argument: The 'for_each' set includes values derived from resource attributes that cannot be determined until apply." An index-keyed map only needs the list's length to be known, which it always is even when individual values aren't, so this resolves regardless of which entries are still unknown. No consumer-visible interface change — same variable name, type, and default; attachments still track the same ARNs, and the address of an already-attached policy at a fixed index in the list is unaffected. Added regression tests to both modules covering this exact shape (a `terraform_data`-backed not-yet-known ARN wired through a `tests/fixtures/unknown-policy-arn` fixture module, since `terraform test`'s built-in setup-module output pattern can't carry an unknown value across `run` blocks) — `iam-role` had no `tests/` directory at all before this, so it also picks up baseline coverage for its default-empty and populated `policy_arns` cases. Surfaced by a real consumer (`latb-fe`): `context/fixes/add-preview-token-secret-infra.md` added a brand-new `preview_token_secret` module and wired its `read_policy_arn` into `web_lambda`/`admin_lambda`'s `additional_policy_arns` in the same apply. The `dev` → `main` release carrying that fix (commit `af27299`) failed CodeBuild's `terraform plan` step on 2026-08-26 with exactly this error on both lambdas.
+
 ## [1.20.0] - 2026-08-26
 
 ### Added

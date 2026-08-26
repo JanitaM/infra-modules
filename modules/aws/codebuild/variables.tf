@@ -101,6 +101,29 @@ variable "artifact_bucket_arn" {
   default     = null
 }
 
+variable "cache_type" {
+  type        = string
+  description = "Build cache type."
+  default     = "NO_CACHE"
+
+  validation {
+    condition     = contains(["NO_CACHE", "S3"], var.cache_type)
+    error_message = "cache_type must be NO_CACHE or S3."
+  }
+}
+
+variable "cache_bucket_name" {
+  type        = string
+  description = "Name of the S3 bucket (optionally bucket/prefix) to store the build cache in. Required when cache_type is S3."
+  default     = null
+}
+
+variable "cache_bucket_arn" {
+  type        = string
+  description = "ARN of the S3 bucket in cache_bucket_name. Required when cache_type is S3, used only to scope IAM read/write access."
+  default     = null
+}
+
 variable "build_timeout" {
   type        = number
   description = "Build timeout, in minutes."
@@ -130,5 +153,12 @@ check "artifact_bucket_required" {
   assert {
     condition     = var.artifact_type != "S3" || (var.artifact_bucket_name != null && var.artifact_bucket_arn != null)
     error_message = "artifact_bucket_name and artifact_bucket_arn are required when artifact_type is S3."
+  }
+}
+
+check "cache_bucket_required" {
+  assert {
+    condition     = var.cache_type != "S3" || (var.cache_bucket_name != null && var.cache_bucket_arn != null)
+    error_message = "cache_bucket_name and cache_bucket_arn are required when cache_type is S3."
   }
 }

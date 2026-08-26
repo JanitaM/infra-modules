@@ -39,6 +39,16 @@ run "no_s3_policies_by_default" {
     condition     = length(aws_iam_role_policy.artifacts_s3) == 0
     error_message = "no artifacts_s3 policy should be created when artifact_type is NO_ARTIFACTS"
   }
+
+  assert {
+    condition     = length(aws_iam_role_policy.cache_s3) == 0
+    error_message = "no cache_s3 policy should be created when cache_type is NO_CACHE"
+  }
+
+  assert {
+    condition     = aws_codebuild_project.primary.cache[0].type == "NO_CACHE"
+    error_message = "cache type should default to NO_CACHE"
+  }
 }
 
 run "source_s3_policy_created_for_s3_source" {
@@ -82,6 +92,33 @@ run "artifacts_s3_policy_created_for_s3_artifacts" {
   assert {
     condition     = length(aws_iam_role_policy.artifacts_s3) == 1
     error_message = "an artifacts_s3 policy should be created when artifact_type is S3"
+  }
+}
+
+run "cache_s3_policy_created_for_s3_cache" {
+  command = plan
+
+  variables {
+    cache_type        = "S3"
+    cache_bucket_name = "my-cache-bucket"
+    cache_bucket_arn  = "arn:aws:s3:::my-cache-bucket"
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.cache_s3[0]
+    values = {
+      json = "{}"
+    }
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy.cache_s3) == 1
+    error_message = "a cache_s3 policy should be created when cache_type is S3"
+  }
+
+  assert {
+    condition     = aws_codebuild_project.primary.cache[0].location == "my-cache-bucket"
+    error_message = "cache location should be set to cache_bucket_name when cache_type is S3"
   }
 }
 
@@ -138,4 +175,14 @@ run "rejects_invalid_artifact_type" {
   }
 
   expect_failures = [var.artifact_type]
+}
+
+run "rejects_invalid_cache_type" {
+  command = plan
+
+  variables {
+    cache_type = "LOCAL"
+  }
+
+  expect_failures = [var.cache_type]
 }

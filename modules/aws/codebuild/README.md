@@ -38,6 +38,9 @@ module "ci" {
 | `artifact_type` | `NO_ARTIFACTS` or `S3` | `string` | `"NO_ARTIFACTS"` |
 | `artifact_bucket_name` | Artifact bucket name. Required when `artifact_type = S3` | `string` | `null` |
 | `artifact_bucket_arn` | Artifact bucket ARN, for IAM scoping. Required when `artifact_type = S3` | `string` | `null` |
+| `cache_type` | `NO_CACHE` or `S3` | `string` | `"NO_CACHE"` |
+| `cache_bucket_name` | Cache bucket name (optionally `bucket/prefix`). Required when `cache_type = S3` | `string` | `null` |
+| `cache_bucket_arn` | Cache bucket ARN, for IAM scoping. Required when `cache_type = S3` | `string` | `null` |
 | `build_timeout` | Build timeout, in minutes | `number` | `15` |
 | `log_retention_days` | CloudWatch Logs retention | `number` | `30` |
 | `tags` | Tags applied to the project, role, and log group | `map(string)` | `{}` |
@@ -56,4 +59,8 @@ module "ci" {
 - Creates a dedicated IAM role trusted only by `codebuild.amazonaws.com`
 - Creates and manages the project's CloudWatch Logs group itself, with an explicit retention period, rather than relying on CodeBuild's implicit unmanaged group
 - Scopes the build role's log permissions to this project's own log group only, never a wildcard log group
-- Scopes any source/artifact S3 permissions to the exact bucket ARNs passed in, never `*`
+- Scopes any source/artifact/cache S3 permissions to the exact bucket ARNs passed in, never `*`
+
+## Build caching
+
+`cache_type` defaults to `NO_CACHE`, matching the project's behavior before this variable existed. Setting `cache_type = "S3"` (with `cache_bucket_name`/`cache_bucket_arn`) configures the CodeBuild project's own cache, but that alone does nothing — the project's `buildspec.yml` must also declare a top-level `cache: paths:` section naming the directories to persist (e.g. a Next.js app's `.next/cache/**/*`). CodeBuild treats the two as independent: the project-level `cache` block says *where* to store the cache, the buildspec's says *what* to put in it. `LOCAL` cache type is not supported by this module — it isn't durable across build-host recycling and no consumer has needed it yet; add it if one does.

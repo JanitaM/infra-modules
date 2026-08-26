@@ -75,6 +75,23 @@ resource "aws_iam_role_policy" "artifacts_s3" {
   policy = data.aws_iam_policy_document.artifacts_s3[0].json
 }
 
+# AC-6: read/write access scoped to the single cache bucket, only created when
+# cache_type == "S3".
+data "aws_iam_policy_document" "cache_s3" {
+  count = var.cache_type == "S3" ? 1 : 0
+  statement {
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:GetBucketAcl", "s3:GetBucketLocation"]
+    resources = [var.cache_bucket_arn, "${var.cache_bucket_arn}/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "cache_s3" {
+  count  = var.cache_type == "S3" ? 1 : 0
+  name   = "${var.project_name}-cache-s3"
+  role   = aws_iam_role.primary.id
+  policy = data.aws_iam_policy_document.cache_s3[0].json
+}
+
 resource "aws_codebuild_project" "primary" {
   name          = var.project_name
   description   = var.description
@@ -91,6 +108,11 @@ resource "aws_codebuild_project" "primary" {
     type     = var.artifact_type
     name     = var.artifact_type == "S3" ? var.project_name : null
     location = var.artifact_type == "S3" ? var.artifact_bucket_name : null
+  }
+
+  cache {
+    type     = var.cache_type
+    location = var.cache_type == "S3" ? var.cache_bucket_name : null
   }
 
   # SC-7 / AC-6: privileged_mode defaults to false. It is a real, settable

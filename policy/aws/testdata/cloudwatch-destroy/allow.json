@@ -1,0 +1,15 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.cloudwatch.aws_sns_topic.alerts",
+      "type": "aws_sns_topic",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "kms_master_key_id": null
+        },
+        "after": null
+      }
+    }
+  ]
+}

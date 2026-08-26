@@ -1,0 +1,16 @@
+{
+  "resource_changes": [
+    {
+      "address": "module.tags_table.aws_dynamodb_table.primary",
+      "type": "aws_dynamodb_table",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "server_side_encryption": [],
+          "point_in_time_recovery": []
+        },
+        "after": null
+      }
+    }
+  ]
+}

@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- `policy/aws/global.rego`'s DynamoDB SSE/PITR checks and `policy/aws/modules/cloudwatch.rego`'s SNS-encryption check no longer flag a resource that is being **destroyed**. Both used a `not <helper>(resource)` pattern where the helper read `resource.change.after.<field>` — a pure delete's `change.after` is `null`, so the field read is undefined, the helper itself becomes undefined for that input, and negating an undefined term (`not`) evaluates to `true` in Rego, misreporting "does not have X enabled" for a table/topic that is simply going away and has no `after` state to be compliant or not. Added a shared `being_destroyed(resource)` helper (`global.rego`, reused by `cloudwatch.rego` — same package) guarding all three rules: `resource.change.after == null`. A replace (delete-then-create) still has a real `after` and is checked normally; only a pure delete is exempted. The other modules using a direct `!=` comparison against `.change.after.*` (`cognito`, `ssm`, `cloudtrail-trail`, `lambda-function-url`) don't have this bug — comparing against an undefined value directly makes the whole rule body undefined (no deny), rather than `not`-negating it into a false positive — audited and confirmed clean, no change needed there. Added `policy/aws/testdata/dynamodb-table-destroy/allow.json` and `policy/aws/testdata/cloudwatch-destroy/allow.json`, both reproducing and failing against the pre-fix rules. Surfaced by a real consumer (`latb-fe`): `remove-dead-tag-backend-infra.md` had already dropped `TagsTable` from `infra/dynamodb.tf` (todo.md item [25]), and the next `terraform plan` that actually planned its destruction failed the `conftest` gate in CodeBuild with exactly this false positive — see `context/fixes/bump-infra-modules-v1.21.0-for-each-fix.md`'s Build log in `latb-fe` for the live CI failure this closes. This policy is consumed unpinned (cloned fresh from `main` at build time, not referenced by `?ref=`), so no consumer-side version bump is needed once this merges.
+
 ## [1.21.0] - 2026-08-26
 
 ### Fixed

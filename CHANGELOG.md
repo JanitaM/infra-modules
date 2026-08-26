@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.20.0] - 2026-08-26
+
+### Added
+
+- `cache_type`, `cache_bucket_name`, and `cache_bucket_arn` on `modules/aws/codebuild`, adding a `cache` block on `aws_codebuild_project` and (only when `cache_type = "S3"`) an IAM role policy scoping read/write access to the exact cache bucket ARN — the same `type`/`bucket_name`/`bucket_arn` shape `artifact_type` already uses. The module previously had no way to configure a build cache at all, so every project it created ran with `cache { type = "NO_CACHE" }` implicitly, and every build logged CodeBuild's own "No build cache found" warning and re-fetched/rebuilt from scratch. `cache_type` defaults to `NO_CACHE`, so existing consumers are unaffected. `LOCAL` cache type is intentionally not supported here — it isn't durable across build-host recycling, and S3 covers the immediate need. Note for consumers: a project's `buildspec.yml` also needs its own top-level `cache: paths:` section naming what to persist (e.g. `.next/cache/**/*` for a Next.js build) — this module's `cache` block only configures *where* the cache lives, not *what* goes into it. Surfaced by a real consumer (`latb-fe`): `context/todo.md` item 19, `context/fixes/codebuild-no-build-cache.md`.
+
 ## [1.19.0] - 2026-08-25
 
 ### Fixed

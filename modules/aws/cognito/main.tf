@@ -55,6 +55,14 @@ resource "aws_cognito_user_pool_client" "primary" {
   callback_urls                        = length(var.callback_urls) > 0 ? var.callback_urls : null
   logout_urls                          = length(var.callback_urls) > 0 ? var.logout_urls : null
   supported_identity_providers         = length(var.callback_urls) > 0 ? ["COGNITO"] : null
+
+  dynamic "refresh_token_rotation" {
+    for_each = var.refresh_token_rotation != null ? [var.refresh_token_rotation] : []
+    content {
+      feature                    = refresh_token_rotation.value.feature
+      retry_grace_period_seconds = refresh_token_rotation.value.retry_grace_period_seconds
+    }
+  }
 }
 
 # AC-3/IA-2: the Hosted UI (and therefore any authorization-code flow at all) does not exist

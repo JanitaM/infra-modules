@@ -38,6 +38,26 @@ module "users" {
 }
 ```
 
+To enable refresh-token rotation (each redeemed refresh token is replaced with a new one, and reuse of an already-rotated-out token becomes detectable — the default leaves refresh tokens static/reusable for their full validity):
+
+```hcl
+module "users" {
+  source = "github.com/JanitaM/infra-modules//modules/aws/cognito?ref=v1.6.0"
+
+  user_pool_name = "example-users"
+  client_name    = "example-web-client"
+
+  refresh_token_rotation = {
+    feature                    = "ENABLED"
+    retry_grace_period_seconds = 0
+  }
+
+  tags = {
+    project = "example"
+  }
+}
+```
+
 Build the OIDC endpoints from the module's outputs:
 
 - `issuer` = `https://cognito-idp.<region>.amazonaws.com/${user_pool_id}`
@@ -59,6 +79,7 @@ Build the OIDC endpoints from the module's outputs:
 | `callback_urls` | Allowed OAuth2 redirect URIs. Non-empty turns on the app client's authorization-code flow; requires `hosted_ui_domain_prefix` to be set | `list(string)` | `[]` |
 | `logout_urls` | Allowed post-logout redirect URIs. Only meaningful when `callback_urls` is set | `list(string)` | `[]` |
 | `allowed_oauth_scopes` | OAuth scopes granted to the authorization-code flow. Only meaningful when `callback_urls` is set | `list(string)` | `["openid", "email", "profile"]` |
+| `refresh_token_rotation` | Refresh-token rotation for the app client (`feature` = `"ENABLED"` or `"DISABLED"`, `retry_grace_period_seconds` optional). `null` omits the block, keeping refresh tokens static/reusable | `object({ feature = string, retry_grace_period_seconds = optional(number, 0) })` | `null` |
 
 ## Outputs
 

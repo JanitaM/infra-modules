@@ -49,3 +49,17 @@ variable "allowed_oauth_scopes" {
   description = "OAuth scopes granted to the app client's authorization-code flow. Only meaningful when callback_urls is set."
   default     = ["openid", "email", "profile"]
 }
+
+variable "refresh_token_rotation" {
+  type = object({
+    feature                    = string
+    retry_grace_period_seconds = optional(number, 0)
+  })
+  description = "Refresh-token rotation for the app client: each redeemed refresh token is replaced with a new one, and reuse of an already-rotated-out token can be detected. `feature` must be \"ENABLED\" or \"DISABLED\". `null` (the default) omits the block entirely, matching this module's original behavior — refresh tokens stay static/reusable for their full validity, with no rotation to detect reuse against."
+  default     = null
+
+  validation {
+    condition     = var.refresh_token_rotation == null || contains(["ENABLED", "DISABLED"], var.refresh_token_rotation.feature)
+    error_message = "refresh_token_rotation.feature must be \"ENABLED\" or \"DISABLED\"."
+  }
+}

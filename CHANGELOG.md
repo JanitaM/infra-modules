@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.23.0] - 2026-08-27
+
+### Added
+
+- `refresh_token_rotation` on `modules/aws/cognito`, adding a `refresh_token_rotation` block to `aws_cognito_user_pool_client.primary` (`feature` = `"ENABLED"`/`"DISABLED"`, optional `retry_grace_period_seconds`) — the module previously had no way to turn rotation on, so every client it created left refresh tokens static/reusable for their full validity with no way to detect a stolen/replayed token being reused. Defaults to `null`, omitting the block entirely, so existing consumers are unaffected. Surfaced by a real consumer (`latb-fe`): `admin-auth-refresh-token.md`'s token-family-reuse revocation design was unreachable against the real, deployed admin app because its Cognito client had no rotation to detect reuse against — `context/fixes/enable-cognito-refresh-token-rotation.md`, `context/todo.md` item 31.
+
 ## [1.22.0] - 2026-08-27
 
 ### Added

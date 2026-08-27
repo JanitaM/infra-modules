@@ -83,3 +83,50 @@ run "rejects_callback_urls_without_hosted_ui_domain" {
 
   expect_failures = [check.hosted_ui_domain_required_for_oauth]
 }
+
+run "defaults_to_no_refresh_token_rotation" {
+  command = plan
+
+  assert {
+    condition     = length(aws_cognito_user_pool_client.primary.refresh_token_rotation) == 0
+    error_message = "no refresh_token_rotation input should produce no refresh_token_rotation block"
+  }
+}
+
+run "enables_refresh_token_rotation_when_set" {
+  command = plan
+
+  variables {
+    refresh_token_rotation = {
+      feature                    = "ENABLED"
+      retry_grace_period_seconds = 0
+    }
+  }
+
+  assert {
+    condition     = length(aws_cognito_user_pool_client.primary.refresh_token_rotation) == 1
+    error_message = "a supplied refresh_token_rotation should produce exactly one refresh_token_rotation block"
+  }
+
+  assert {
+    condition     = aws_cognito_user_pool_client.primary.refresh_token_rotation[0].feature == "ENABLED"
+    error_message = "refresh_token_rotation.feature should pass through to the block"
+  }
+
+  assert {
+    condition     = aws_cognito_user_pool_client.primary.refresh_token_rotation[0].retry_grace_period_seconds == 0
+    error_message = "retry_grace_period_seconds should pass through to the block"
+  }
+}
+
+run "rejects_invalid_refresh_token_rotation_feature" {
+  command = plan
+
+  variables {
+    refresh_token_rotation = {
+      feature = "MAYBE"
+    }
+  }
+
+  expect_failures = [var.refresh_token_rotation]
+}

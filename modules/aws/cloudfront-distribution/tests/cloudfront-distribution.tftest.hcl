@@ -553,6 +553,67 @@ run "lambda_edge_origin_request_arn_attaches_to_ordered_behavior_of_lambda_origi
   }
 }
 
+run "no_viewer_request_function_association_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].function_association) == 0
+    error_message = "no function_association should be attached when viewer_request_function_arn is unset, matching this module's original behavior"
+  }
+}
+
+run "viewer_request_function_arn_attaches_to_default_behavior_regardless_of_origin_type" {
+  command = plan
+
+  variables {
+    viewer_request_function_arn = "arn:aws:cloudfront::123456789012:function/host-redirect"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].function_association) == 1
+    error_message = "a function_association should be attached to the default cache behavior when viewer_request_function_arn is set, even for an s3-type origin"
+  }
+
+  assert {
+    condition     = tolist(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].function_association)[0].event_type == "viewer-request"
+    error_message = "event_type should be viewer-request"
+  }
+
+  assert {
+    condition     = tolist(tolist(aws_cloudfront_distribution.primary.default_cache_behavior)[0].function_association)[0].function_arn == "arn:aws:cloudfront::123456789012:function/host-redirect"
+    error_message = "function_arn should match var.viewer_request_function_arn"
+  }
+}
+
+run "viewer_request_function_arn_attaches_to_ordered_behavior_too" {
+  command = plan
+
+  variables {
+    origins = [
+      {
+        origin_id   = "s3-origin"
+        origin_type = "s3"
+        domain_name = "bucket.s3.amazonaws.com"
+        bucket_id   = "my-bucket"
+        bucket_arn  = "arn:aws:s3:::my-bucket"
+      },
+      {
+        origin_id     = "lambda-origin"
+        origin_type   = "lambda"
+        domain_name   = "abc123.lambda-url.us-east-1.on.aws"
+        function_name = "my-function"
+        path_pattern  = "/api/*"
+      },
+    ]
+    viewer_request_function_arn = "arn:aws:cloudfront::123456789012:function/host-redirect"
+  }
+
+  assert {
+    condition     = length(tolist(aws_cloudfront_distribution.primary.ordered_cache_behavior)[0].function_association) == 1
+    error_message = "the ordered cache behavior should also get the function_association"
+  }
+}
+
 run "rejects_qualifier_on_s3_origin" {
   command = plan
 

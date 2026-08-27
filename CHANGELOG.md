@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- `viewer_request_function_arn` on `modules/aws/cloudfront-distribution`, attaching an `aws_cloudfront_function` to the `viewer-request` event on every cache behavior (default and ordered alike), regardless of origin type — the module previously had no viewer-request hook at all; its only `lambda_function_association` support was `origin-request` (`lambda_edge_origin_request_arn`), which runs after CloudFront has already committed to fetching from the origin, too late to short-circuit with a redirect response. Defaults to `null`, attaching nothing, so existing consumers are unaffected. Surfaced by a real consumer (`latb-fe`): Google Search Console flagged `www`/`http` variants of `lookatthesebirds.com` serving `200` with no redirect to the canonical apex — `context/fixes/cloudfront-host-redirect-www-to-apex.md`, `context/todo.md` item 34.
+
 ## [1.21.1] - 2026-08-26
 
 ### Fixed

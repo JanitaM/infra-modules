@@ -120,6 +120,19 @@ resource "aws_cloudfront_distribution" "primary" {
       }
     }
 
+    # Runs before CloudFront picks an origin — earlier than the origin-request
+    # association above, and the only event a CloudFront Function (not
+    # Lambda@Edge) supports. Attached regardless of origin_type: a
+    # viewer-request check (e.g. Host header) has nothing to do with which
+    # origin the request would otherwise reach.
+    dynamic "function_association" {
+      for_each = var.viewer_request_function_arn != null ? [1] : []
+      content {
+        event_type   = "viewer-request"
+        function_arn = var.viewer_request_function_arn
+      }
+    }
+
     # SC-8: no opt-out for plaintext HTTP to the viewer.
     viewer_protocol_policy = "redirect-to-https"
   }
@@ -157,6 +170,15 @@ resource "aws_cloudfront_distribution" "primary" {
           event_type   = "origin-request"
           lambda_arn   = var.lambda_edge_origin_request_arn
           include_body = true
+        }
+      }
+
+      # See the matching block on default_cache_behavior above for why.
+      dynamic "function_association" {
+        for_each = var.viewer_request_function_arn != null ? [1] : []
+        content {
+          event_type   = "viewer-request"
+          function_arn = var.viewer_request_function_arn
         }
       }
 

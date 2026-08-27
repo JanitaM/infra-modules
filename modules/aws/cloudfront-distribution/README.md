@@ -56,6 +56,7 @@ module "site" {
 | `origin_request_policy_id` | ID of an `aws_cloudfront_origin_request_policy` to attach to every cache behavior. Only meaningful alongside `cache_policy_id` | `string` | `null` |
 | `response_headers_policy_id` | ID of an `aws_cloudfront_response_headers_policy` to attach to every cache behavior (e.g. for CSP/HSTS). This module doesn't author the policy itself — header content is project-specific | `string` | `null` |
 | `lambda_edge_origin_request_arn` | Qualified ARN (including a published version — CloudFront rejects `$LATEST` for Lambda@Edge) of a Lambda@Edge function to associate with the `origin-request` event, `include_body = true`, on every lambda-type origin's cache behavior (default and ordered alike). Not attached to s3-type origins' behaviors | `string` | `null` |
+| `viewer_request_function_arn` | ARN of an `aws_cloudfront_function` to associate with the `viewer-request` event on every cache behavior (default and ordered alike), regardless of origin type | `string` | `null` |
 | `tags` | Tags applied to the distribution | `map(string)` | `{}` |
 
 ### Cache-forwarding on the default behavior
@@ -114,6 +115,36 @@ Lambda@Edge's `origin-request`/`origin-response` triggers cap request-body acces
 `include_body` is enabled (always on here); a body larger than that arrives truncated to the
 function. Confirm actual payload sizes for your origin's POST/PUT/PATCH traffic before relying
 on this for a body that could exceed it.
+
+### CloudFront Function on `viewer-request`, for logic that must run before origin selection
+
+`viewer_request_function_arn` attaches an `aws_cloudfront_function` to the `viewer-request`
+event — CloudFront's earliest hook, running before it has decided which origin/cache behavior
+even applies. Use this for cheap, stateless per-request logic like a host-based redirect (e.g.
+`www` to apex): a Lambda@Edge `origin-request` function (`lambda_edge_origin_request_arn`
+above) runs too late for this, since CloudFront has already committed to fetching from the
+origin by then. Unlike `lambda_edge_origin_request_arn`, this attaches to every cache
+behavior's default *and* ordered form regardless of `origin_type` — a viewer-request check has
+nothing to do with which origin the request would otherwise reach. This module doesn't author
+the function itself:
+
+```hcl
+resource "aws_cloudfront_function" "www_redirect" {
+  name    = "example-www-redirect"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = file("${path.module}/functions/www-redirect.js")
+}
+
+module "site" {
+  # ...
+  viewer_request_function_arn = aws_cloudfront_function.www_redirect.arn
+}
+```
+
+CloudFront Functions only support JavaScript (a strict subset, no npm dependencies) and cap
+execution at ~1ms — not a substitute for `lambda_edge_origin_request_arn` when the logic needs
+Node.js, external calls, or more compute.
 
 ## Outputs
 

@@ -119,6 +119,12 @@ variable "lambda_edge_origin_request_arn" {
   default     = null
 }
 
+variable "viewer_request_function_arn" {
+  type        = string
+  description = "ARN of an aws_cloudfront_function to associate with the viewer-request event on every cache behavior (default and ordered alike), for lightweight per-request logic that must run before CloudFront even decides which origin to use — e.g. a host-based redirect (www to apex). Runs earlier than lambda_edge_origin_request_arn's origin-request event, which fires only after CloudFront has already committed to fetching from the origin. This module doesn't author the function itself. Leave null to attach none, matching this module's original behavior."
+  default     = null
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags applied to the distribution."

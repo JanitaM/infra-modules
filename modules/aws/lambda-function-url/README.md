@@ -53,7 +53,7 @@ does not manage rollback itself; it only makes the version + alias exist so a co
 |---|---|---|---|
 | `function_name` | Lambda function name | `string` | — (required) |
 | `handler` | Function entrypoint, e.g. `index.handler` | `string` | — (required) |
-| `runtime` | Lambda runtime identifier (`nodejs20.x`, `nodejs18.x`, `python3.12`, `python3.11`) | `string` | — (required) |
+| `runtime` | Lambda runtime identifier (`nodejs22.x`, `nodejs20.x`, `nodejs18.x`, `python3.12`, `python3.11`) | `string` | — (required) |
 | `filename` | Path to the deployment package (`.zip`) | `string` | — (required) |
 | `source_code_hash` | Base64 SHA256 of the deployment package, for change detection | `string` | `null` |
 | `timeout` | Function timeout, in seconds | `number` | `3` |

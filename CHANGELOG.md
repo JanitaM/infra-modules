@@ -3,6 +3,19 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.24.0] - 2026-08-28
+
+### Added
+
+- `modules/aws/lambda-function-url`'s `runtime` variable now accepts `nodejs22.x`, added
+  to the validation allowlist alongside the existing `nodejs20.x`/`nodejs18.x`/`python3.12`/
+  `python3.11`. Surfaced by a real consumer (`latb-fe`): AWS Lambda's `nodejs20.x` runtime
+  has been unpatched since Node 20's 2026-04-30 upstream end-of-life and now has hard
+  deadlines — function creation blocks 2026-08-31, function updates block 2026-09-30 — so
+  every consumer of this module needs a path off it. Before this, a plan setting
+  `runtime = "nodejs22.x"` failed outright at the variable-validation step with no way
+  around it short of forking the module. `context/fixes/migrate-lambda-runtime-nodejs22.md`.
+
 ## [1.23.1] - 2026-08-27
 
 ### Fixed

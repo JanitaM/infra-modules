@@ -79,7 +79,7 @@ Build the OIDC endpoints from the module's outputs:
 | `callback_urls` | Allowed OAuth2 redirect URIs. Non-empty turns on the app client's authorization-code flow; requires `hosted_ui_domain_prefix` to be set | `list(string)` | `[]` |
 | `logout_urls` | Allowed post-logout redirect URIs. Only meaningful when `callback_urls` is set | `list(string)` | `[]` |
 | `allowed_oauth_scopes` | OAuth scopes granted to the authorization-code flow. Only meaningful when `callback_urls` is set | `list(string)` | `["openid", "email", "profile"]` |
-| `refresh_token_rotation` | Refresh-token rotation for the app client (`feature` = `"ENABLED"` or `"DISABLED"`, `retry_grace_period_seconds` optional). `null` omits the block, keeping refresh tokens static/reusable | `object({ feature = string, retry_grace_period_seconds = optional(number, 0) })` | `null` |
+| `refresh_token_rotation` | Refresh-token rotation for the app client (`feature` = `"ENABLED"` or `"DISABLED"`, `retry_grace_period_seconds` optional). `null` omits the block, keeping refresh tokens static/reusable. Enabling it drops `ALLOW_REFRESH_TOKEN_AUTH` from the client's `explicit_auth_flows` — AWS rejects the two together; refresh instead goes through the OAuth token endpoint | `object({ feature = string, retry_grace_period_seconds = optional(number, 0) })` | `null` |
 
 ## Outputs
 

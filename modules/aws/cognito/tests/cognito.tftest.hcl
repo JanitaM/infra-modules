@@ -130,3 +130,39 @@ run "rejects_invalid_refresh_token_rotation_feature" {
 
   expect_failures = [var.refresh_token_rotation]
 }
+
+run "drops_allow_refresh_token_auth_when_rotation_enabled" {
+  command = plan
+
+  variables {
+    refresh_token_rotation = {
+      feature                    = "ENABLED"
+      retry_grace_period_seconds = 0
+    }
+  }
+
+  assert {
+    condition     = !contains(aws_cognito_user_pool_client.primary.explicit_auth_flows, "ALLOW_REFRESH_TOKEN_AUTH")
+    error_message = "ALLOW_REFRESH_TOKEN_AUTH must be dropped when refresh token rotation is enabled — AWS rejects the two together"
+  }
+
+  assert {
+    condition     = contains(aws_cognito_user_pool_client.primary.explicit_auth_flows, "ALLOW_USER_SRP_AUTH")
+    error_message = "ALLOW_USER_SRP_AUTH should remain regardless of rotation"
+  }
+}
+
+run "keeps_allow_refresh_token_auth_when_rotation_disabled" {
+  command = plan
+
+  variables {
+    refresh_token_rotation = {
+      feature = "DISABLED"
+    }
+  }
+
+  assert {
+    condition     = contains(aws_cognito_user_pool_client.primary.explicit_auth_flows, "ALLOW_REFRESH_TOKEN_AUTH")
+    error_message = "ALLOW_REFRESH_TOKEN_AUTH should remain when rotation is explicitly DISABLED, not just when unset"
+  }
+}

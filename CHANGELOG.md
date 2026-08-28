@@ -3,6 +3,12 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.23.1] - 2026-08-27
+
+### Fixed
+
+- `modules/aws/cognito`'s app client now drops `ALLOW_REFRESH_TOKEN_AUTH` from `explicit_auth_flows` whenever `refresh_token_rotation.feature = "ENABLED"` (v1.23.0). AWS rejects the two together at apply time (`InvalidParameterException: ALLOW_REFRESH_TOKEN_AUTH is not a permitted ExplicitAuthFlow when refresh token rotation is enabled`) — refresh instead goes through the OAuth token endpoint (`grant_type=refresh_token`), which this flag doesn't gate. `ALLOW_USER_SRP_AUTH` is unaffected; `ALLOW_REFRESH_TOKEN_AUTH` still applies when rotation is unset or explicitly `DISABLED`. Surfaced by a real consumer (`latb-fe`): the v1.23.0 bump's first `terraform apply` against real Cognito failed with exactly this error — `context/fixes/enable-cognito-refresh-token-rotation.md`.
+
 ## [1.23.0] - 2026-08-27
 
 ### Added

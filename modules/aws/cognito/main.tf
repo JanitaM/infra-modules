@@ -41,7 +41,14 @@ resource "aws_cognito_user_pool_client" "primary" {
 
   generate_secret = false
 
-  explicit_auth_flows = ["ALLOW_USER_SRP_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"]
+  # AWS rejects ALLOW_REFRESH_TOKEN_AUTH (the InitiateAuth API's direct refresh flow) on a
+  # client with refresh_token_rotation enabled ("ALLOW_REFRESH_TOKEN_AUTH is not a permitted
+  # ExplicitAuthFlow when refresh token rotation is enabled") — refresh instead goes through
+  # the OAuth token endpoint (grant_type=refresh_token), which this flag doesn't gate.
+  explicit_auth_flows = concat(
+    ["ALLOW_USER_SRP_AUTH"],
+    (var.refresh_token_rotation == null || var.refresh_token_rotation.feature != "ENABLED") ? ["ALLOW_REFRESH_TOKEN_AUTH"] : []
+  )
 
   prevent_user_existence_errors = "ENABLED"
 

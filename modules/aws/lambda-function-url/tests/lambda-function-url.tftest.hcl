@@ -109,6 +109,19 @@ run "rejects_invalid_runtime" {
   expect_failures = [var.runtime]
 }
 
+run "accepts_nodejs22_runtime" {
+  command = plan
+
+  variables {
+    runtime = "nodejs22.x"
+  }
+
+  assert {
+    condition     = aws_lambda_function.primary.runtime == "nodejs22.x"
+    error_message = "nodejs22.x should be accepted by the runtime validation"
+  }
+}
+
 run "no_layers_by_default" {
   command = plan
 

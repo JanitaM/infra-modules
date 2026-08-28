@@ -13,10 +13,10 @@ variable "runtime" {
   description = "Lambda runtime identifier."
   validation {
     condition = contains([
-      "nodejs20.x", "nodejs18.x",
+      "nodejs22.x", "nodejs20.x", "nodejs18.x",
       "python3.12", "python3.11",
     ], var.runtime)
-    error_message = "runtime must be one of the currently supported nodejs20.x, nodejs18.x, python3.12, python3.11."
+    error_message = "runtime must be one of the currently supported nodejs22.x, nodejs20.x, nodejs18.x, python3.12, python3.11."
   }
 }
 

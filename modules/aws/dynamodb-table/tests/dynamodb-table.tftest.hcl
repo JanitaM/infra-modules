@@ -133,3 +133,16 @@ run "rejects_invalid_gsi_projection_type" {
 
   expect_failures = [var.global_secondary_indexes]
 }
+
+run "kms_key_arn_passed_through_when_set" {
+  command = plan
+
+  variables {
+    kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/test-key"
+  }
+
+  assert {
+    condition     = tolist(aws_dynamodb_table.primary.server_side_encryption)[0].kms_key_arn == "arn:aws:kms:us-east-1:123456789012:key/test-key"
+    error_message = "kms_key_arn should be passed through to server_side_encryption when set"
+  }
+}

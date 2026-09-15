@@ -66,3 +66,68 @@ run "multiple_cors_rules_create_multiple_blocks" {
     error_message = "one cors_rule block should be planned per cors_rules list entry"
   }
 }
+
+run "aes256_sse_by_default" {
+  command = plan
+
+  assert {
+    condition     = tolist(aws_s3_bucket_server_side_encryption_configuration.primary.rule)[0].apply_server_side_encryption_by_default[0].sse_algorithm == "AES256"
+    error_message = "sse_algorithm should default to AES256 when kms_key_arn is not set"
+  }
+
+  assert {
+    condition     = tolist(aws_s3_bucket_server_side_encryption_configuration.primary.rule)[0].apply_server_side_encryption_by_default[0].kms_master_key_id == null
+    error_message = "kms_master_key_id should be null when kms_key_arn is not set"
+  }
+}
+
+run "kms_sse_when_key_arn_set" {
+  command = plan
+
+  variables {
+    kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/test-key"
+  }
+
+  assert {
+    condition     = tolist(aws_s3_bucket_server_side_encryption_configuration.primary.rule)[0].apply_server_side_encryption_by_default[0].sse_algorithm == "aws:kms"
+    error_message = "sse_algorithm should switch to aws:kms when kms_key_arn is set"
+  }
+
+  assert {
+    condition     = tolist(aws_s3_bucket_server_side_encryption_configuration.primary.rule)[0].apply_server_side_encryption_by_default[0].kms_master_key_id == "arn:aws:kms:us-east-1:123456789012:key/test-key"
+    error_message = "kms_master_key_id should match var.kms_key_arn"
+  }
+}
+
+run "object_lock_disabled_by_default" {
+  command = plan
+
+  assert {
+    condition     = aws_s3_bucket.primary.object_lock_enabled == false
+    error_message = "object_lock_enabled should default to false"
+  }
+}
+
+run "object_lock_enabled_with_versioning" {
+  command = plan
+
+  variables {
+    object_lock_enabled = true
+  }
+
+  assert {
+    condition     = aws_s3_bucket.primary.object_lock_enabled == true
+    error_message = "object_lock_enabled should be true when set, with versioning_enabled left at its default (true)"
+  }
+}
+
+run "object_lock_without_versioning_fails" {
+  command = plan
+
+  variables {
+    object_lock_enabled = true
+    versioning_enabled  = false
+  }
+
+  expect_failures = [aws_s3_bucket.primary]
+}

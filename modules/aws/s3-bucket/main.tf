@@ -1,6 +1,17 @@
 resource "aws_s3_bucket" "primary" {
-  bucket = var.bucket_name
-  tags   = var.tags
+  bucket              = var.bucket_name
+  object_lock_enabled = var.object_lock_enabled
+  tags                = var.tags
+
+  lifecycle {
+    precondition {
+      # Object Lock requires versioning, and both are set at creation time —
+      # catch the invalid combination at plan, not with AWS's own apply-time
+      # error.
+      condition     = !var.object_lock_enabled || var.versioning_enabled
+      error_message = "object_lock_enabled requires versioning_enabled = true — Object Lock cannot be enabled on an unversioned bucket."
+    }
+  }
 }
 
 # SC-28: Protection of information at rest.
@@ -9,7 +20,8 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "primary" {
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
+      sse_algorithm     = var.kms_key_arn != null ? "aws:kms" : "AES256"
+      kms_master_key_id = var.kms_key_arn
     }
   }
 }

@@ -65,3 +65,9 @@ variable "tags" {
   description = "Tags applied to the table."
   default     = {}
 }
+
+variable "kms_key_arn" {
+  type        = string
+  description = "ARN of an existing customer-managed KMS key to encrypt the table with. Leave null (the default) for the AWS-owned key. The module never creates a key itself."
+  default     = null
+}

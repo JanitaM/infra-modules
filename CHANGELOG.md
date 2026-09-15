@@ -3,6 +3,25 @@
 All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [Unreleased]
+
+### Added
+
+- `kms_key_arn` on `modules/aws/s3-bucket`, switching the bucket's SSE rule from AES256 to
+  SSE-KMS when set, and `object_lock_enabled` on the same module, wired straight onto
+  `aws_s3_bucket.primary` since AWS only allows enabling Object Lock at bucket creation. A new
+  lifecycle precondition rejects `object_lock_enabled = true` with `versioning_enabled = false`
+  at plan time rather than letting AWS reject the apply. Both default to their prior behavior
+  (AES256, Object Lock off) when unset, so existing consumers see no diff. Also added
+  `kms_key_arn` on `modules/aws/dynamodb-table`, passed through to
+  `server_side_encryption.kms_key_arn`, same null-default/no-diff posture. Neither module
+  creates the key itself — same "attach, don't author" pattern `cloudtrail-trail`'s
+  `kms_key_id` already uses. Surfaced by a real consumer (`CGE-P_Capstone`): its Layer 1 GRC
+  baseline needs an S3 evidence vault (KMS + Object Lock, governance mode) and a DynamoDB
+  submissions table (KMS) sharing one CMK, both provisioned via this repo's modules rather than
+  hand-rolled resources — `context/features/s3-dynamodb-kms-object-lock-extensions.md`,
+  `../cge-p_capstone/context/todo.md` item 3.
+
 ## [1.24.0] - 2026-08-28
 
 ### Added

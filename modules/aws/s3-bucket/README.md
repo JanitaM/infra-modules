@@ -34,6 +34,30 @@ module "images_bucket" {
 }
 ```
 
+A bucket for write-once-read-many evidence storage needs `object_lock_enabled`, which AWS only
+allows setting at bucket creation:
+
+```hcl
+module "evidence_vault" {
+  source               = "github.com/JanitaM/infra-modules//modules/aws/s3-bucket?ref=v1.0.0"
+  bucket_name          = "example-evidence-vault"
+  kms_key_arn          = aws_kms_key.evidence.arn
+  object_lock_enabled  = true
+}
+
+# This module only makes the bucket Object-Lock-capable — the retention
+# mode/period is a per-consumer policy decision, attached separately:
+resource "aws_s3_bucket_object_lock_configuration" "evidence_vault" {
+  bucket = module.evidence_vault.bucket_id
+  rule {
+    default_retention {
+      mode = "GOVERNANCE"
+      days = 90
+    }
+  }
+}
+```
+
 ## Inputs
 
 | Name | Description | Type | Default |
@@ -42,6 +66,8 @@ module "images_bucket" {
 | `versioning_enabled` | Enable object versioning | `bool` | `true` |
 | `tags` | Tags applied to the bucket | `map(string)` | `{}` |
 | `cors_rules` | CORS rules for the bucket. Empty (the default) creates no CORS configuration | `list(object({ allowed_origins, allowed_methods, allowed_headers, expose_headers, max_age_seconds }))` | `[]` |
+| `kms_key_arn` | ARN of an existing customer-managed KMS key. When set, the bucket uses SSE-KMS instead of SSE-S3. The module never creates a key itself | `string` | `null` |
+| `object_lock_enabled` | Enable S3 Object Lock. AWS only allows this at bucket creation — it cannot be added later. Requires `versioning_enabled = true` (enforced at plan time). Makes the bucket Object-Lock-*capable* only; the caller attaches their own `aws_s3_bucket_object_lock_configuration` for the actual retention mode/period | `bool` | `false` |
 
 ## Outputs
 
@@ -54,4 +80,4 @@ module "images_bucket" {
 ## What this module always does, with no opt-out
 
 - Blocks all public access (ACLs and bucket policies) at the bucket level
-- Enables AES256 server-side encryption
+- Enables server-side encryption (AES256 by default, or SSE-KMS when `kms_key_arn` is set)

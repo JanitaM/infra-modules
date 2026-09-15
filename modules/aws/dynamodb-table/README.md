@@ -28,6 +28,7 @@ module "sessions_table" {
 | `global_secondary_indexes` | Global secondary indexes — see below | `list(object({...}))` | `[]` |
 | `ttl_attribute` | Attribute DynamoDB uses for item expiry (TTL) | `string` | `null` (disabled) |
 | `tags` | Tags applied to the table | `map(string)` | `{}` |
+| `kms_key_arn` | ARN of an existing customer-managed KMS key. When set, encryption uses that key instead of the AWS-owned key. The module never creates a key itself | `string` | `null` |
 
 ### `global_secondary_indexes`
 
@@ -56,4 +57,5 @@ table's own key (the module deduplicates either way, so reusing a key is safe).
 ## What this module always does, with no opt-out
 
 - Enables point-in-time recovery
-- Enables server-side encryption
+- Enables server-side encryption (AWS-owned key by default, or a customer-managed key when
+  `kms_key_arn` is set)
